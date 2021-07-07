@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/csv"
-	"fmt"
 	"math"
 	"os"
 	"os/exec"
@@ -12,7 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	resultsOutputFilename string
+)
+
 func init() {
+	evalCmd.Flags().StringVarP(&resultsOutputFilename, "output", "o", "result.json", "Results output filename")
+
 	rootCmd.AddCommand(evalCmd)
 }
 
@@ -20,20 +25,11 @@ var evalCmd = &cobra.Command{
 	Use:   "eval",
 	Short: "Evaluate results of a previous test run",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return eval()
+		return eval(resultsOutputFilename)
 	},
 }
 
-type EvalSummary struct {
-	Config Config `json:"config"`
-}
-
-type Results struct {
-	AverageSSIM float64 `json:"average_ssim"`
-	AveragePSNR float64 `json:"average_psnr"`
-}
-
-func eval() error {
+func eval(outFilename string) error {
 	err := calculateVideoMetrics("input/sintel_trailer.mkv", "output/out.mkv")
 	if err != nil {
 		return err
@@ -49,11 +45,17 @@ func eval() error {
 		return err
 	}
 
-	fmt.Println(&Results{
-		AverageSSIM: avgSSIM,
-		AveragePSNR: avgPSNR,
+	var config Config
+	err = parseJSONFile("config.json", &config)
+	if err != nil {
+		return err
+	}
+
+	return saveToJSONFile(outFilename, &Result{
+		Config:      config,
+		AverageSSIM: math.Round(avgSSIM*100) / 100,
+		AveragePSNR: math.Round(avgPSNR*100) / 100,
 	})
-	return nil
 }
 
 const (

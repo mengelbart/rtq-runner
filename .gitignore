@@ -1,5 +1,8 @@
 output/
 input/
 logs/
+html/
+*.json
 *.csv
 *.log
+rtq-runner
