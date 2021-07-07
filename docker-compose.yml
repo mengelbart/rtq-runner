@@ -30,8 +30,8 @@ services:
     volumes:
       - ./$INPUT:/input:ro
     environment:
-      - GST_DEBUG=3
       - ROLE=sender
+      - QLOGDIR=/logs/qlog
       - LOG_FILE=/logs/qrt.log
       - RECEIVER=193.167.0.100:4242
       - VIDEOS=$VIDEOS
@@ -52,6 +52,7 @@ services:
       - $OUTPUT:/streams
     environment:
       - ROLE=receiver
+      - QLOGDIR=/logs/qlog
       - LOG_FILE=/logs/qrt.log
       - DESTINATION=/streams/out.mkv
     cap_add:
