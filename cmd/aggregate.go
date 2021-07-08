@@ -13,13 +13,13 @@ import (
 var (
 	aggregateInputDirname   string
 	aggregateOutputFilename string
-	date                    string
+	aggregationDate         int64
 )
 
 func init() {
 	aggregateCmd.Flags().StringVarP(&aggregateInputDirname, "input", "i", "results", "Directory containing all results JSON files to aggregate")
 	aggregateCmd.Flags().StringVarP(&aggregateOutputFilename, "output", "o", "results.json", "Output filename for aggregated results")
-	aggregateCmd.Flags().StringVarP(&date, "date", "d", time.Now().Format(time.RFC3339), "Date and time of the test run in RFC3339 format")
+	aggregateCmd.Flags().Int64VarP(&aggregationDate, "date", "d", time.Now().Unix(), "Date and time of the test run in RFC3339 format")
 	rootCmd.AddCommand(aggregateCmd)
 }
 
@@ -27,10 +27,7 @@ var aggregateCmd = &cobra.Command{
 	Use:   "aggregate",
 	Short: "aggregate results",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		parsedDate, err := time.Parse(time.RFC3339, date)
-		if err != nil {
-			return err
-		}
+		parsedDate := time.Unix(aggregationDate, 0)
 		return aggregate(aggregateInputDirname, aggregateOutputFilename, parsedDate)
 	},
 }

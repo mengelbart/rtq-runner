@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	runDate   int64
 	sender    string
 	receiver  string
 	videoFile string
@@ -18,6 +19,7 @@ var (
 )
 
 func init() {
+	aggregateCmd.Flags().Int64VarP(&aggregationDate, "date", "d", time.Now().Unix(), "Date and time of the test run in RFC3339 format")
 	runCmd.Flags().StringVarP(&sender, "sender", "s", "engelbart/rtq-go-endpoint:main", "sender implementation")
 	runCmd.Flags().StringVarP(&receiver, "receiver", "r", "engelbart/rtq-go-endpoint:main", "receiver implementation")
 	runCmd.Flags().StringVarP(&videoFile, "video-file", "v", "/input/sintel_trailer.mkv", "video stream file")
@@ -31,6 +33,7 @@ var runCmd = &cobra.Command{
 	Short: "Execute tests",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return run(&Config{
+			Date: time.Unix(runDate, 0),
 			Sender: &Implementation{
 				Name: sender,
 				URL:  sender,

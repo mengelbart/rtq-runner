@@ -8,6 +8,7 @@ type Implementation struct {
 }
 
 type Config struct {
+	Date      time.Time       `json:"date"`
 	Sender    *Implementation `json:"sender"`
 	Receiver  *Implementation `json:"receiver"`
 	VideoFile string          `json:"videoFile"`
