@@ -1,0 +1,12 @@
+{
+  "rtq-go": {
+    "sender": {
+      "image": "engelbart/rtq-go-endpoint:main",
+      "url": "https://github.com/mengelbart/rtq-go"
+    },
+    "receiver": {
+      "image": "engelbart/rtq-go-endpoint:main",
+      "url": "https://github.com/mengelbart/rtq-go"
+    }
+  }
+}
