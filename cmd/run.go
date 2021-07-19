@@ -19,7 +19,7 @@ var (
 )
 
 func init() {
-	aggregateCmd.Flags().Int64VarP(&aggregationDate, "date", "d", time.Now().Unix(), "Date and time of the test run in RFC3339 format")
+	runCmd.Flags().Int64VarP(&runDate, "date", "d", time.Now().Unix(), "Unix Timestamp in seconds since epoch")
 	runCmd.Flags().StringVarP(&sender, "sender", "s", "engelbart/rtq-go-endpoint:main", "sender implementation")
 	runCmd.Flags().StringVarP(&receiver, "receiver", "r", "engelbart/rtq-go-endpoint:main", "receiver implementation")
 	runCmd.Flags().StringVarP(&videoFile, "video-file", "v", "/input/sintel_trailer.mkv", "video stream file")

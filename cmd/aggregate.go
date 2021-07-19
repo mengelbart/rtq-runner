@@ -19,7 +19,7 @@ var (
 func init() {
 	aggregateCmd.Flags().StringVarP(&aggregateInputDirname, "input", "i", "results", "Directory containing all results JSON files to aggregate")
 	aggregateCmd.Flags().StringVarP(&aggregateOutputFilename, "output", "o", "results.json", "Output filename for aggregated results")
-	aggregateCmd.Flags().Int64VarP(&aggregationDate, "date", "d", time.Now().Unix(), "Date and time of the test run in RFC3339 format")
+	aggregateCmd.Flags().Int64VarP(&aggregationDate, "date", "d", time.Now().Unix(), "Unix Timestamp in seconds since epoch")
 	rootCmd.AddCommand(aggregateCmd)
 }
 
