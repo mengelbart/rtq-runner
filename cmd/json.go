@@ -28,3 +28,21 @@ func saveToJSONFile(filename string, input interface{}) error {
 	}
 	return ioutil.WriteFile(filename, data, 0644)
 }
+
+func getImageURLFromImplementations(image string) (string, error) {
+	var is Implementations
+	err := parseJSONFile("implementations.json", &is)
+	if err != nil {
+		return "", err
+	}
+
+	for _, v := range is {
+		if v.Receiver.Image == image {
+			return v.Receiver.URL, nil
+		}
+		if v.Sender.Image == image {
+			return v.Sender.URL, nil
+		}
+	}
+	return image, nil
+}

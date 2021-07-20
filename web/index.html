@@ -10,32 +10,43 @@
   </head>
 
   <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="navbar-brand" href="https://github.com/mengelbart/rtq-runner">
-          RTP over QUIC Test Runner
-      </a>
-    </nav>
 
     <div class="container-fluid">
 
-      <h3 class="mt-5">Measurement Results</h3>
-      <table>
-        <tr>
-          <th>Implementation</th>
-          <th>Simple P2P</th>
-        </tr>
-        {{ range .Results }}
+      <h1>RTP over QUIC Test Runner</h1>
+
+      <h3>Measurement Results</h3>
+      <table class="table table-bordered">
+        <thead>
           <tr>
-            <td><a href="{{ .Config.Sender.URL }}">{{ .Config.Sender.Name }}</a><br><a href="{{ .Config.Receiver.URL }}">{{ .Config.Receiver.Name }}</a></td>
+            <th>Implementation</th>
+            <th>Simple P2P</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {{ range .Results }}
+          <tr>
+            <td>Send: <a href="{{ .Config.Implementation.Sender.URL }}" target="_blank">{{ .Config.Implementation.Sender.Image }}</a><br>
+              Recv: <a href="{{ .Config.Implementation.Receiver.URL }}" target="_blank">{{ .Config.Implementation.Receiver.Image }}</a></td>
             <td>
-              <a class="btn btn-success succeeded" href="">{{ .AverageSSIM }}</a>
-              <a class="btn" href="">{{ .AveragePSNR }}</a>
+              <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average SSIM: {{ .AverageSSIM }}">S: {{ .AverageSSIM }}</span>
+              <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average PSNR: {{ .AveragePSNR }}">P: {{ .AveragePSNR }}</span>
             </td>
           </tr>
-        {{ end }}
+          {{ end }}
+        </tbody>
       </table>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script>
+      // Enable tooltips
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+          return new bootstrap.Tooltip(tooltipTriggerEl)
+      })
+    </script>
   </body>
 </html>

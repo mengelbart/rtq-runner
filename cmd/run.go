@@ -32,15 +32,25 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Execute tests",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		senderURL, err := getImageURLFromImplementations(sender)
+		if err != nil {
+			return err
+		}
+		receiverURL, err := getImageURLFromImplementations(receiver)
+		if err != nil {
+			return err
+		}
 		return run(&Config{
 			Date: time.Unix(runDate, 0),
-			Sender: &Implementation{
-				Name: sender,
-				URL:  sender,
-			},
-			Receiver: &Implementation{
-				Name: receiver,
-				URL:  receiver,
+			Implementation: Implementation{
+				Sender: Endpoint{
+					Image: sender,
+					URL:   senderURL,
+				},
+				Receiver: Endpoint{
+					Image: receiver,
+					URL:   receiverURL,
+				},
 			},
 			VideoFile: videoFile,
 			Timeout:   timeout,
@@ -62,8 +72,8 @@ func run(c *Config) error {
 	cmd.Env = os.Environ()
 	for k, v := range map[string]string{
 		"SCENARIO": "simple-p2p --delay=15ms --bandwidth=10Mbps --queue=25",
-		"SENDER":   c.Sender.Name,
-		"RECEIVER": c.Receiver.Name,
+		"SENDER":   c.Implementation.Sender.Image,
+		"RECEIVER": c.Implementation.Receiver.Image,
 		"VIDEOS":   c.VideoFile,
 
 		"INPUT":  "./input",

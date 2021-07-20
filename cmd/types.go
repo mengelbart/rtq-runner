@@ -2,17 +2,23 @@ package cmd
 
 import "time"
 
+type Endpoint struct {
+	Image string `json:"image"`
+	URL   string `json:"url"`
+}
+
+type Implementations map[string]Implementation
+
 type Implementation struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
+	Sender   Endpoint `json:"sender"`
+	Receiver Endpoint `json:"receiver"`
 }
 
 type Config struct {
-	Date      time.Time       `json:"date"`
-	Sender    *Implementation `json:"sender"`
-	Receiver  *Implementation `json:"receiver"`
-	VideoFile string          `json:"videoFile"`
-	Timeout   time.Duration   `json:"timeout"`
+	Date           time.Time      `json:"date"`
+	Implementation Implementation `json:"implementation"`
+	VideoFile      string         `json:"videoFile"`
+	Timeout        time.Duration  `json:"timeout"`
 }
 
 type TestCase struct {
