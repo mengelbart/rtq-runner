@@ -35,12 +35,12 @@ func eval(outFilename string) error {
 		return err
 	}
 
-	avgSSIM, err := getAverageVideoMetric("ssim.log", ssimValueColumn, strconv.ParseFloat)
+	ssimTable, err := getVideoMetricTable("ssim.log", ssimValueColumn, strconv.ParseFloat)
 	if err != nil {
 		return err
 	}
 
-	avgPSNR, err := getAverageVideoMetric("psnr.log", psnrValueColumn, parseAndBound)
+	psnrTable, err := getVideoMetricTable("psnr.log", psnrValueColumn, parseAndBound)
 	if err != nil {
 		return err
 	}
@@ -52,9 +52,11 @@ func eval(outFilename string) error {
 	}
 
 	return saveToJSONFile(outFilename, &Result{
-		Config:      config,
-		AverageSSIM: math.Round(avgSSIM*100) / 100,
-		AveragePSNR: math.Round(avgPSNR*100) / 100,
+		Config:       config,
+		AverageSSIM:  math.Round(averageMapValues(ssimTable)*100) / 100,
+		AveragePSNR:  math.Round(averageMapValues(psnrTable)*100) / 100,
+		PerFrameSSIM: ssimTable,
+		PerFramePSNR: psnrTable,
 	})
 }
 
@@ -76,10 +78,10 @@ func parseAndBound(n string, bitSize int) (float64, error) {
 	return float / (1 + float), nil
 }
 
-func getAverageVideoMetric(filename string, valueColumn int, parse floatParser) (float64, error) {
+func getVideoMetricTable(filename string, valueColumn int, parse floatParser) ([]IntToFloat64, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	defer file.Close()
 	r := csv.NewReader(file)
@@ -88,27 +90,30 @@ func getAverageVideoMetric(filename string, valueColumn int, parse floatParser) 
 
 	rows, err := r.ReadAll()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	vals := make([]float64, len(rows))
+	table := make([]IntToFloat64, len(rows))
 	for i, r := range rows {
 		vStr := strings.Split(r[valueColumn], ":")[1]
 		v, err := parse(vStr, 64)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
-		vals[i] = v
+		table[i] = IntToFloat64{
+			Key:   i,
+			Value: v,
+		}
 	}
 
-	return average(vals), nil
+	return table, nil
 }
 
-func average(xs []float64) float64 {
+func averageMapValues(table []IntToFloat64) float64 {
 	sum := 0.0
-	for _, x := range xs {
-		sum += x
+	for _, x := range table {
+		sum += x.Value
 	}
-	return sum / float64(len(xs))
+	return sum / float64(len(table))
 }
 
 func calculateVideoMetrics(inputFile, outputFile string) error {

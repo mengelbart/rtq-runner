@@ -21,20 +21,19 @@ type Config struct {
 	Timeout        time.Duration  `json:"timeout"`
 }
 
-type TestCase struct {
-	Scenario string `json:"scenario"`
-
-	AverageSSIM float64 `json:"average_ssim"`
-	AveragePSNR float64 `json:"average_psnr"`
-}
-
 type Result struct {
 	Config Config `json:"config"`
 
-	Tests []TestCase `json:"tests"`
-
 	AverageSSIM float64 `json:"average_ssim"`
 	AveragePSNR float64 `json:"average_psnr"`
+
+	PerFrameSSIM []IntToFloat64 `json:"per_frame_ssim"`
+	PerFramePSNR []IntToFloat64 `json:"per_frame_psnr"`
+}
+
+type IntToFloat64 struct {
+	Key   int     `json:"key"`
+	Value float64 `json:"value"`
 }
 
 type AggregatedResults struct {
