@@ -11,17 +11,15 @@ import (
 )
 
 var (
-	runDate   int64
-	sender    string
-	receiver  string
-	videoFile string
-	timeout   time.Duration
+	runDate        int64
+	implementation string
+	videoFile      string
+	timeout        time.Duration
 )
 
 func init() {
 	runCmd.Flags().Int64VarP(&runDate, "date", "d", time.Now().Unix(), "Unix Timestamp in seconds since epoch")
-	runCmd.Flags().StringVarP(&sender, "sender", "s", "engelbart/rtq-go-endpoint:main", "sender implementation")
-	runCmd.Flags().StringVarP(&receiver, "receiver", "r", "engelbart/rtq-go-endpoint:main", "receiver implementation")
+	runCmd.Flags().StringVarP(&implementation, "implementation", "i", "rtq-go", "implementation from implementation.json to use")
 	runCmd.Flags().StringVarP(&videoFile, "video-file", "v", "/input/sintel_trailer.mkv", "video stream file")
 	runCmd.Flags().DurationVarP(&timeout, "timeout", "t", 5*time.Minute, "max time to wait before cancelling the test run")
 
@@ -32,28 +30,21 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Execute tests",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		senderURL, err := getImageURLFromImplementations(sender)
+		var is Implementations
+		err := parseJSONFile("implementations.json", &is)
 		if err != nil {
 			return err
 		}
-		receiverURL, err := getImageURLFromImplementations(receiver)
-		if err != nil {
-			return err
+		i, ok := is[implementation]
+		if !ok {
+			return fmt.Errorf("implementation not found: %v", implementation)
 		}
+		i.Name = implementation
 		return run(&Config{
-			Date: time.Unix(runDate, 0),
-			Implementation: Implementation{
-				Sender: Endpoint{
-					Image: sender,
-					URL:   senderURL,
-				},
-				Receiver: Endpoint{
-					Image: receiver,
-					URL:   receiverURL,
-				},
-			},
-			VideoFile: videoFile,
-			Timeout:   timeout,
+			Date:           time.Unix(runDate, 0),
+			Implementation: i,
+			VideoFile:      videoFile,
+			Timeout:        timeout,
 		})
 	},
 }

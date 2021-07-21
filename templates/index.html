@@ -30,8 +30,9 @@
             <td>Send: <a href="{{ .Config.Implementation.Sender.URL }}" target="_blank">{{ .Config.Implementation.Sender.Image }}</a><br>
               Recv: <a href="{{ .Config.Implementation.Receiver.URL }}" target="_blank">{{ .Config.Implementation.Receiver.Image }}</a></td>
             <td>
-              <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average SSIM: {{ .AverageSSIM }}">S: {{ .AverageSSIM }}</span>
-              <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average PSNR: {{ .AveragePSNR }}">P: {{ .AveragePSNR }}</span>
+              <a href="{{ .Config.DetailsLink }}" class="btn btn-primary btn-sm">Link</a>
+              <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average SSIM: {{ (index .TestCases "simple-p2p").AverageSSIM }}">S: {{ (index .TestCases "simple-p2p").AverageSSIM }}</span>
+              <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average PSNR: {{ (index .TestCases "simple-p2p").AveragePSNR }}">P: {{ (index .TestCases "simple-p2p").AveragePSNR }}</span>
             </td>
           </tr>
           {{ end }}

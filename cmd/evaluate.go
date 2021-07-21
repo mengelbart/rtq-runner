@@ -52,11 +52,15 @@ func eval(outFilename string) error {
 	}
 
 	return saveToJSONFile(outFilename, &Result{
-		Config:       config,
-		AverageSSIM:  math.Round(averageMapValues(ssimTable)*100) / 100,
-		AveragePSNR:  math.Round(averageMapValues(psnrTable)*100) / 100,
-		PerFrameSSIM: ssimTable,
-		PerFramePSNR: psnrTable,
+		Config: config,
+		TestCases: map[string]*TestCase{
+			"simple-p2p": {
+				AverageSSIM:  math.Round(averageMapValues(ssimTable)*100) / 100,
+				AveragePSNR:  math.Round(averageMapValues(psnrTable)*100) / 100,
+				PerFrameSSIM: ssimTable,
+				PerFramePSNR: psnrTable,
+			},
+		},
 	})
 }
 

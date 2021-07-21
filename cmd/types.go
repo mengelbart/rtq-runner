@@ -12,23 +12,29 @@ type Implementations map[string]Implementation
 type Implementation struct {
 	Sender   Endpoint `json:"sender"`
 	Receiver Endpoint `json:"receiver"`
+	Name     string   `json:"name"`
 }
 
 type Config struct {
 	Date           time.Time      `json:"date"`
+	DetailsLink    string         `json:"details_link"`
 	Implementation Implementation `json:"implementation"`
-	VideoFile      string         `json:"videoFile"`
+	VideoFile      string         `json:"video_file"`
 	Timeout        time.Duration  `json:"timeout"`
 }
 
-type Result struct {
-	Config Config `json:"config"`
-
+type TestCase struct {
 	AverageSSIM float64 `json:"average_ssim"`
 	AveragePSNR float64 `json:"average_psnr"`
 
 	PerFrameSSIM []IntToFloat64 `json:"per_frame_ssim"`
 	PerFramePSNR []IntToFloat64 `json:"per_frame_psnr"`
+}
+
+type Result struct {
+	Config Config `json:"config"`
+
+	TestCases map[string]*TestCase `json:"test_cases"`
 }
 
 type IntToFloat64 struct {
