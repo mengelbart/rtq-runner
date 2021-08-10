@@ -51,7 +51,7 @@
   },
   "udp-scream": {
     "sender": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-udp-sceam",
+      "image": "engelbart/rtq-go-endpoint:0.0.1-udp-scream",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-udp-scream"
     },
     "receiver": {
