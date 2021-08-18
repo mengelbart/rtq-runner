@@ -1,61 +1,61 @@
 {
   "rtq-go-newreno": {
     "sender": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-newreno",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-newreno",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-newreno"
     },
     "receiver": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-newreno",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-newreno",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-newreno"
     }
   },
   "rtq-go-scream-newreno": {
     "sender": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-scream-newreno",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-scream-newreno",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-scream-newreno"
     },
     "receiver": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-scream-newreno",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-scream-newreno",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-scream-newreno"
     }
   },
   "rtq-go-scream": {
     "sender": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-scream",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-scream",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-scream"
     },
     "receiver": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-scream",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-scream",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-scream"
     }
   },
   "rtq-go-no-cc": {
     "sender": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-no-cc",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-no-cc",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-no-cc"
     },
     "receiver": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-no-cc",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-no-cc",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-no-cc"
     }
   },
   "udp-no-cc": {
     "sender": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-udp-no-cc",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-udp-no-cc",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-udp-no-cc"
     },
     "receiver": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-udp-no-cc",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-udp-no-cc",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-udp-no-cc"
     }
   },
   "udp-scream": {
     "sender": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-udp-scream",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-udp-scream",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-udp-scream"
     },
     "receiver": {
-      "image": "engelbart/rtq-go-endpoint:0.0.1-udp-scream",
+      "image": "engelbart/rtq-go-endpoint:0.0.2-udp-scream",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.1-udp-scream"
     }
   }
