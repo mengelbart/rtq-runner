@@ -32,6 +32,7 @@ services:
     environment:
       - ROLE=sender
       - QLOGDIR=/logs/qlog
+      - RTPLOGDIR=/logs/rtp
       - LOG_FILE=/logs/qrt.log
       - RECEIVER=193.167.0.100:4242
       - VIDEOS=$VIDEOS
@@ -53,6 +54,7 @@ services:
     environment:
       - ROLE=receiver
       - QLOGDIR=/logs/qlog
+      - RTPLOGDIR=/logs/rtp
       - LOG_FILE=/logs/qrt.log
       - DESTINATION=/streams/out.mkv
     cap_add:
