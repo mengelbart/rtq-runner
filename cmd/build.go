@@ -84,6 +84,11 @@ type detailsInput struct {
 
 	SSIMPlotSVG template.HTML
 	PSNRPlotSVG template.HTML
+
+	RTPOutPlotSVG  template.HTML
+	RTPInPlotSVG   template.HTML
+	RTCPOutPlotSVG template.HTML
+	RTCPInPlotSVG  template.HTML
 }
 
 func buildResultDetailPage(input *TestCase, outDir string) error {
@@ -106,11 +111,32 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 	if err != nil {
 		return err
 	}
+	sentRTP, err := plotTimeSeriesSVG(input.SentRTP, "RTP Out", "s", "Bytes")
+	if err != nil {
+		return err
+	}
+	receivedRTP, err := plotTimeSeriesSVG(input.ReceivedRTP, "RTP In", "s", "Bytes")
+	if err != nil {
+		return err
+	}
+	//sentRTCP, err := plotTimeSeriesSVG(input.SentRTCP, "RTCP Out", "s", "Bytes")
+	//if err != nil {
+	//	return err
+	//}
+	//receivedRTCP, err := plotTimeSeriesSVG(input.ReceivedRTCP, "RTCP In", "s", "Bytes")
+	//if err != nil {
+	//	return err
+	//}
+
 	details := detailsInput{
-		AverageSSIM: input.AverageSSIM,
-		AveragePSNR: input.AveragePSNR,
-		SSIMPlotSVG: template.HTML(ssimSVG),
-		PSNRPlotSVG: template.HTML(psnrSVG),
+		AverageSSIM:   input.AverageSSIM,
+		AveragePSNR:   input.AveragePSNR,
+		SSIMPlotSVG:   template.HTML(ssimSVG),
+		PSNRPlotSVG:   template.HTML(psnrSVG),
+		RTPOutPlotSVG: template.HTML(sentRTP),
+		RTPInPlotSVG:  template.HTML(receivedRTP),
+		//RTCPOutPlotSVG: template.HTML(sentRTCP),
+		//RTCPInPlotSVG:  template.HTML(receivedRTCP),
 	}
 
 	return templates.ExecuteTemplate(index, "detail.html", details)
@@ -129,7 +155,7 @@ func plotTimeSeriesSVG(data []IntToFloat64, title, xLabel, yLabel string) (strin
 
 	p.Add(s)
 
-	writerTo, err := p.WriterTo(4*vg.Inch, 4*vg.Inch, "svg")
+	writerTo, err := p.WriterTo(4*vg.Inch, 2*vg.Inch, "svg")
 	if err != nil {
 		return "", err
 	}

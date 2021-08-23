@@ -29,6 +29,12 @@ type TestCase struct {
 
 	PerFrameSSIM []IntToFloat64 `json:"per_frame_ssim"`
 	PerFramePSNR []IntToFloat64 `json:"per_frame_psnr"`
+
+	SentRTP  []IntToFloat64 `json:"sent_rtp"`
+	SentRTCP []IntToFloat64 `json:"sent_rtcp"`
+
+	ReceivedRTP  []IntToFloat64 `json:"received_rtp"`
+	ReceivedRTCP []IntToFloat64 `json:"received_rtcp"`
 }
 
 type Result struct {

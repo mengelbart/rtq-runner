@@ -16,9 +16,22 @@
   <h1>RTP over QUIC Test Runner</h1>
 
   <h3>Measurement Results</h3>
-  {{ .SSIMPlotSVG }}
 
-  {{ .PSNRPlotSVG }}
+  <div>
+    {{ .SSIMPlotSVG }}
+
+    {{ .PSNRPlotSVG }}
+  </div>
+
+  <div>
+    {{ .RTPOutPlotSVG }}
+
+    {{ .RTPInPlotSVG }}
+  </div>
+
+  {{ if .RTCPOutPlotSVG }} {{ .RTCPOutPlotSVG }} {{end}}
+
+  {{ if .RTCPInPlotSVG }} {{ .RTCPInPlotSVG }} {{end}}
 
 </div>
 
