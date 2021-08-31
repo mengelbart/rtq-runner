@@ -55,7 +55,23 @@
         {{ .RTCPInPlotSVG }}
       </div>
     {{ end }}
+  </div>
 
+  {{ if .QLOGSenderPacketsSent }}
+    <div class="row justify-content-md-center">
+      <div class="col-sm-auto">
+        {{ .QLOGSenderPacketsSent }}
+      </div>
+      <div class="col-sm-auto">
+        {{ .QLOGSenderPacketsReceived }}
+      </div>
+      <div class="col-sm-auto">
+        {{ .QLOGCongestionWindow }}
+      </div>
+    </div>
+  {{ end }}
+
+  <div class="row justify-content-md-center">
     {{ if .CC }}
       <div class="col-sm-auto">
         {{ .CC }}
@@ -78,6 +94,17 @@
       {{ .RTCPOutPlotSVG }}
     </div>
   </div>
+
+  {{ if .QLOGReceiverPacketsSent }}
+    <div class="row justify-content-md-center">
+      <div class="col-sm-auto">
+        {{ .QLOGReceiverPacketsReceived }}
+      </div>
+      <div class="col-sm-auto">
+        {{ .QLOGReceiverPacketsSent }}
+      </div>
+    </div>
+  {{ end }}
 
 </div>
 

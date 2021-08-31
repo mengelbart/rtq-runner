@@ -86,6 +86,13 @@ type detailsInput struct {
 	RTCPOutPlotSVG template.HTML
 	RTCPInPlotSVG  template.HTML
 
+	QLOGSenderPacketsSent       template.HTML
+	QLOGSenderPacketsReceived   template.HTML
+	QLOGReceiverPacketsSent     template.HTML
+	QLOGReceiverPacketsReceived template.HTML
+
+	QLOGCongestionWindow template.HTML
+
 	CC template.HTML
 }
 
@@ -135,6 +142,39 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 		}
 	}
 
+	var qsps, qspr, qrps, qrpr, qcc template.HTML
+	if len(input.QLOGSenderPacketsSent) > 0 {
+		qsps, err = input.plotQLOGMetric("QLOG bytes sent", input.QLOGSenderPacketsSent)
+		if err != nil {
+			return err
+		}
+	}
+	if len(input.QLOGSenderPacketsReceived) > 0 {
+		qspr, err = input.plotQLOGMetric("QLOG bytes received", input.QLOGSenderPacketsReceived)
+		if err != nil {
+			return err
+		}
+	}
+	if len(input.QLOGReceiverPacketsSent) > 0 {
+		qrps, err = input.plotQLOGMetric("QLOG bytes sent", input.QLOGReceiverPacketsSent)
+		if err != nil {
+			return err
+		}
+	}
+	if len(input.QLOGReceiverPacketsReceived) > 0 {
+		qrpr, err = input.plotQLOGMetric("QLOG bytes received", input.QLOGReceiverPacketsReceived)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(input.QLOGCongestionWindow) > 0 {
+		qcc, err = input.plotQLOGMetric("QLOG Congestion Window", input.QLOGCongestionWindow)
+		if err != nil {
+			return err
+		}
+	}
+
 	var cc template.HTML
 	if len(input.CCTargetBitrate) > 0 {
 		cc, err = input.plotCCBitrate()
@@ -144,16 +184,21 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 	}
 
 	details := detailsInput{
-		AverageSSIM:          input.AverageSSIM,
-		AveragePSNR:          input.AveragePSNR,
-		AverageTargetBitrate: input.AverageTargetBitrate,
-		SSIMPlotSVG:          ssim,
-		PSNRPlotSVG:          psnr,
-		RTPOutPlotSVG:        rtpOut,
-		RTPInPlotSVG:         rtpIn,
-		RTCPOutPlotSVG:       rtcpOut,
-		RTCPInPlotSVG:        rtcpIn,
-		CC:                   cc,
+		AverageSSIM:                 input.AverageSSIM,
+		AveragePSNR:                 input.AveragePSNR,
+		AverageTargetBitrate:        input.AverageTargetBitrate,
+		SSIMPlotSVG:                 ssim,
+		PSNRPlotSVG:                 psnr,
+		RTPOutPlotSVG:               rtpOut,
+		RTPInPlotSVG:                rtpIn,
+		RTCPOutPlotSVG:              rtcpOut,
+		RTCPInPlotSVG:               rtcpIn,
+		QLOGSenderPacketsSent:       qsps,
+		QLOGSenderPacketsReceived:   qspr,
+		QLOGReceiverPacketsSent:     qrps,
+		QLOGReceiverPacketsReceived: qrpr,
+		QLOGCongestionWindow:        qcc,
+		CC:                          cc,
 	}
 
 	return templates.ExecuteTemplate(index, "detail.html", details)

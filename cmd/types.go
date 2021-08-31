@@ -47,6 +47,14 @@ type TestCase struct {
 	ReceivedRTP  []IntToFloat64 `json:"received_rtp"`
 	ReceivedRTCP []IntToFloat64 `json:"received_rtcp"`
 
+	QLOGSenderPacketsSent     []Float64ToFloat64 `json:"qlog_sender_packets_sent"`
+	QLOGSenderPacketsReceived []Float64ToFloat64 `json:"qlog_sender_packets_received"`
+
+	QLOGReceiverPacketsSent     []Float64ToFloat64 `json:"qlog_receiver_packets_sent"`
+	QLOGReceiverPacketsReceived []Float64ToFloat64 `json:"qlog_receiver_packets_received"`
+
+	QLOGCongestionWindow []Float64ToFloat64 `json:"qlog_congestion_window"`
+
 	CCTargetBitrate []IntToFloat64 `json:"cc_target_bitrate"`
 }
 
@@ -72,6 +80,11 @@ func (t *TestCase) getRTPMetric(m string) []IntToFloat64 {
 		return t.ReceivedRTCP
 	}
 	panic(fmt.Errorf("unknown rtp metric %s", m))
+}
+
+type Float64ToFloat64 struct {
+	Key   float64 `json:"key"`
+	Value float64 `json:"value"`
 }
 
 type IntToFloat64 struct {
@@ -136,6 +149,31 @@ func (t *TestCase) plotCCBitrate() (template.HTML, error) {
 	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
 }
 
+func (t *TestCase) plotQLOGMetric(title string, table []Float64ToFloat64) (template.HTML, error) {
+	p := plot.New()
+	p.Add(plotter.NewGrid())
+	p.Title.Text = title
+	p.X.Label.Text = "ms"
+	p.Y.Label.Text = "Bytes"
+	p.Legend.Top = false
+
+	var l *plotter.Line
+	var err error
+
+	data := getXYsFloat64(table)
+	l, err = plotter.NewLine(data)
+	if err != nil {
+		return "", err
+	}
+	p.Add(l)
+	p.Legend.Add(title, l)
+
+	p.Y.Max = data.max
+	p.Y.Min = data.min
+
+	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
+}
+
 func (t *TestCase) plotRTPMetric(title string, table []IntToFloat64) (template.HTML, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
@@ -178,11 +216,33 @@ type maxXYs struct {
 	min, max float64
 }
 
+// TODO: Refactor XY getters and remove redundant code
+
 func getXYs(table []IntToFloat64) maxXYs {
 	max, min := float64(0), float64(0)
 	pts := make(plotter.XYs, len(table))
 	for i, r := range table {
 		pts[i].X = float64(r.Key)
+		pts[i].Y = r.Value
+		if r.Value > max {
+			max = r.Value
+		}
+		if r.Value < min {
+			min = r.Value
+		}
+	}
+	return maxXYs{
+		XYs: pts,
+		max: max,
+		min: min,
+	}
+}
+
+func getXYsFloat64(table []Float64ToFloat64) maxXYs {
+	max, min := float64(0), float64(0)
+	pts := make(plotter.XYs, len(table))
+	for i, r := range table {
+		pts[i].X = r.Key
 		pts[i].Y = r.Value
 		if r.Value > max {
 			max = r.Value

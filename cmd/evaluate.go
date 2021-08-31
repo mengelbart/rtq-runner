@@ -5,13 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/mengelbart/qlog"
 	"github.com/spf13/cobra"
 )
 
@@ -70,6 +73,59 @@ func eval(outFilename string) error {
 		return err
 	}
 
+	var qlogSenderPacketsSent []Float64ToFloat64
+	var qlogSenderPacketsReceived []Float64ToFloat64
+	var qlogCongestionWindow []Float64ToFloat64
+	files, err := filepath.Glob("sender_logs/qlog/*.qlog")
+	if err != nil {
+		return err
+	}
+	if len(files) > 0 {
+		if len(files) != 1 {
+			return fmt.Errorf("found invalid number of qlog files: %v", len(files))
+		}
+		q := qlogDataGetter{path: files[0], metric: qlogPacketSentEventName}
+		qlogSenderPacketsSent, err = q.get()
+		if err != nil {
+			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
+		}
+
+		q = qlogDataGetter{path: files[0], metric: qlogPacketReceivedEventName}
+		qlogSenderPacketsReceived, err = q.get()
+		if err != nil {
+			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
+		}
+
+		q = qlogDataGetter{path: files[0], metric: qlogMetricsUpdatedEventName}
+		qlogCongestionWindow, err = q.get()
+		if err != nil {
+			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
+		}
+	}
+
+	var qlogReceiverPacketsSent []Float64ToFloat64
+	var qlogReceiverPacketsReceived []Float64ToFloat64
+	files, err = filepath.Glob("receiver_logs/qlog/*.qlog")
+	if err != nil {
+		return err
+	}
+	if len(files) > 0 {
+		if len(files) != 1 {
+			return fmt.Errorf("found invalid number of qlog files: %v", len(files))
+		}
+		q := qlogDataGetter{path: files[0], metric: qlogPacketSentEventName}
+		qlogReceiverPacketsSent, err = q.get()
+		if err != nil {
+			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
+		}
+
+		q = qlogDataGetter{path: files[0], metric: qlogPacketReceivedEventName}
+		qlogReceiverPacketsReceived, err = q.get()
+		if err != nil {
+			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
+		}
+	}
+
 	var ccTargetBitrateTable []IntToFloat64
 	if _, err = os.Stat("sender_logs/cc.log"); err == nil {
 		g = csvValueGetter{timeColumn: 0, valueColumn: 1}
@@ -103,6 +159,14 @@ func eval(outFilename string) error {
 
 				ReceivedRTP: binToSeconds(receivedRTPTable),
 				SentRTCP:    binToSeconds(sentRTCPTable),
+
+				QLOGSenderPacketsSent:     binToSecondsFloat64(qlogSenderPacketsSent),
+				QLOGSenderPacketsReceived: binToSecondsFloat64(qlogSenderPacketsReceived),
+
+				QLOGReceiverPacketsSent:     binToSecondsFloat64(qlogReceiverPacketsSent),
+				QLOGReceiverPacketsReceived: binToSecondsFloat64(qlogReceiverPacketsReceived),
+
+				QLOGCongestionWindow: binToSecondsFloat64(qlogCongestionWindow),
 
 				CCTargetBitrate: ccTargetBitrateTable,
 			},
@@ -169,6 +233,22 @@ func (g *csvValueGetter) get(i int, row []string) IntToFloat64 {
 		Key:   int(ts.Milliseconds()),
 		Value: v,
 	}
+}
+
+func binToSecondsFloat64(table []Float64ToFloat64) []Float64ToFloat64 {
+	if len(table) <= 0 {
+		return table
+	}
+	bins := int(math.Ceil(float64(table[len(table)-1].Key) / 1000.0))
+	result := make([]Float64ToFloat64, bins)
+	for _, v := range table {
+		b := math.Floor(float64(v.Key) / 1000.0)
+		bin := int(b)
+		result[bin].Key = b
+		result[bin].Value += v.Value
+	}
+	return result
+
 }
 
 func binToSeconds(table []IntToFloat64) []IntToFloat64 {
@@ -240,4 +320,66 @@ func calculateVideoMetrics(inputFile, outputFile string) error {
 	ffmpeg.Stdout = ffmpegLogFile
 	ffmpeg.Stderr = ffmpegLogFile
 	return ffmpeg.Run()
+}
+
+type qlogDataGetter struct {
+	path   string
+	metric string
+}
+
+func (q *qlogDataGetter) get() ([]Float64ToFloat64, error) {
+	qlogFile, err := os.Open(q.path)
+	if err != nil {
+		return nil, err
+	}
+	bs, err := ioutil.ReadAll(qlogFile)
+	if err != nil {
+		return nil, err
+	}
+	var qlogData qlog.QLOGFileNDJSON
+	err = qlogData.UnmarshalNDJSON(bs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal qlog file: %w", err)
+	}
+
+	var table []Float64ToFloat64
+	for _, r := range qlogData.Trace.Events.Events {
+		if r.Name == q.metric {
+			table = append(table, qlogGetters[q.metric](r))
+		}
+	}
+	return table, nil
+}
+
+const (
+	qlogPacketSentEventName     = "transport:packet_sent"
+	qlogPacketReceivedEventName = "transport:packet_received"
+	qlogMetricsUpdatedEventName = "recovery:metrics_updated"
+)
+
+var qlogGetters = map[string]func(r qlog.EventWrapper) Float64ToFloat64{
+	qlogPacketSentEventName:     qlogPacketSentGetter,
+	qlogPacketReceivedEventName: qlogPacketReceivedGetter,
+	qlogMetricsUpdatedEventName: qlogCongestionWindowGetter,
+}
+
+func qlogPacketSentGetter(r qlog.EventWrapper) Float64ToFloat64 {
+	return Float64ToFloat64{
+		Key:   r.RelativeTime,
+		Value: float64(r.Data.PacketSent.Raw.Length),
+	}
+}
+
+func qlogPacketReceivedGetter(r qlog.EventWrapper) Float64ToFloat64 {
+	return Float64ToFloat64{
+		Key:   r.RelativeTime,
+		Value: float64(r.Data.PacketReceived.Raw.Length),
+	}
+}
+
+func qlogCongestionWindowGetter(r qlog.EventWrapper) Float64ToFloat64 {
+	return Float64ToFloat64{
+		Key:   r.RelativeTime,
+		Value: float64(r.Data.MetricsUpdated.CongestionWindow),
+	}
 }
