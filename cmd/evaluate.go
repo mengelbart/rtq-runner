@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"os/exec"
@@ -47,26 +49,37 @@ func eval(outFilename string) error {
 		return fmt.Errorf("failed to get psnr metrics table: %w", err)
 	}
 
-	g := rtpValueGetter{valueColumn: 8}
+	g := csvValueGetter{timeColumn: 2, valueColumn: 8}
 	sentRTPTable, err := getMetricTable("sender_logs/rtp/rtp_out.log", '\t', g.get)
 	if err != nil {
 		return fmt.Errorf("failed to get rtp out metrics table: %w", err)
 	}
-	//g = rtpValueGetter{}
-	//receivedRTCPTable, err := getMetricTable("sender_logs/rtp/rtcp_in.log", '\t', g.get)
-	//if err != nil {
-	//	return err
-	//}
-	g = rtpValueGetter{valueColumn: 8}
+	g = csvValueGetter{timeColumn: 2, valueColumn: 3}
+	receivedRTCPTable, err := getMetricTable("sender_logs/rtp/rtcp_in.log", '\t', g.get)
+	if err != nil {
+		return err
+	}
+	g = csvValueGetter{timeColumn: 2, valueColumn: 8}
 	receivedRTPTable, err := getMetricTable("receiver_logs/rtp/rtp_in.log", '\t', g.get)
 	if err != nil {
 		return fmt.Errorf("failed to get rtp in metrics table: %w", err)
 	}
-	//g = rtpValueGetter{}
-	//sentRTCPTable, err := getMetricTable("receiver_logs/rtp/rtcp_out.log", '\t', g.get)
-	//if err != nil {
-	//	return err
-	//}
+	g = csvValueGetter{timeColumn: 2, valueColumn: 3}
+	sentRTCPTable, err := getMetricTable("receiver_logs/rtp/rtcp_out.log", '\t', g.get)
+	if err != nil {
+		return err
+	}
+
+	var ccTargetBitrateTable []IntToFloat64
+	if _, err = os.Stat("sender_logs/cc.log"); err == nil {
+		g = csvValueGetter{timeColumn: 0, valueColumn: 1}
+		ccTargetBitrateTable, err = getMetricTable("sender_logs/cc.log", ',', g.get)
+		if err != nil {
+			return err
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
 
 	var config Config
 	err = parseJSONFile("config.json", &config)
@@ -83,11 +96,13 @@ func eval(outFilename string) error {
 				PerFrameSSIM: ssimTable,
 				PerFramePSNR: psnrTable,
 
-				SentRTP: binToSeconds(sentRTPTable),
-				//ReceivedRTCP: receivedRTCPTable,
+				SentRTP:      binToSeconds(sentRTPTable),
+				ReceivedRTCP: binToSeconds(receivedRTCPTable),
 
 				ReceivedRTP: binToSeconds(receivedRTPTable),
-				//SentRTCP:    sentRTCPTable,
+				SentRTCP:    binToSeconds(sentRTCPTable),
+
+				CCTargetBitrate: ccTargetBitrateTable,
 			},
 		},
 	})
@@ -133,33 +148,31 @@ func psnrValueGetter(i int, row []string) IntToFloat64 {
 	}
 }
 
-type rtpValueGetter struct {
-	startTime   time.Time
+type csvValueGetter struct {
+	timeColumn  int
 	valueColumn int
 }
 
-func (g *rtpValueGetter) get(i int, row []string) IntToFloat64 {
-	k, err := strconv.ParseInt(row[2], 10, 64)
+func (g *csvValueGetter) get(i int, row []string) IntToFloat64 {
+	k, err := strconv.ParseInt(row[g.timeColumn], 10, 64)
 	if err != nil {
 		panic(err)
 	}
-	ts := time.Unix(0, k)
-	if g.startTime.IsZero() {
-		g.startTime = ts
-	}
-	key := ts.Sub(g.startTime)
+	ts := time.Duration(k) * time.Millisecond
 	v, err := strconv.ParseFloat(row[g.valueColumn], 64)
 	if err != nil {
 		panic(err)
 	}
-	x := IntToFloat64{
-		Key:   int(key.Milliseconds()),
+	return IntToFloat64{
+		Key:   int(ts.Milliseconds()),
 		Value: v,
 	}
-	return x
 }
 
 func binToSeconds(table []IntToFloat64) []IntToFloat64 {
+	if len(table) <= 0 {
+		return table
+	}
 	bins := int(math.Ceil(float64(table[len(table)-1].Key) / 1000.0))
 	result := make([]IntToFloat64, bins)
 	for _, v := range table {
@@ -180,16 +193,17 @@ func getMetricTable(filename string, comma rune, valueGetter func(i int, row []s
 	r.Comma = comma
 	r.TrimLeadingSpace = true
 
-	rows, err := r.ReadAll()
-	if err != nil {
-		return nil, err
+	var table []IntToFloat64
+	for i := 0; ; i++ {
+		row, err := r.Read()
+		if err != nil {
+			if err == io.EOF || errors.Is(err, csv.ErrFieldCount) { // Ignore parse ErrFieldCount errors, as logs might be cut
+				return table, nil
+			}
+			return table, err
+		}
+		table = append(table, valueGetter(i, row))
 	}
-	table := make([]IntToFloat64, len(rows))
-	for i, r := range rows {
-		table[i] = valueGetter(i, r)
-	}
-
-	return table, nil
 }
 
 func averageMapValues(table []IntToFloat64) float64 {

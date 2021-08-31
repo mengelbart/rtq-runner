@@ -62,7 +62,7 @@ func run(c *Config) error {
 
 	cmd.Env = os.Environ()
 	for k, v := range map[string]string{
-		"SCENARIO": "simple-p2p --delay=15ms --bandwidth=10Mbps --queue=25",
+		"SCENARIO": "simple-p2p --delay=15ms --bandwidth=1Mbps --queue=25",
 		"SENDER":   c.Implementation.Sender.Image,
 		"RECEIVER": c.Implementation.Receiver.Image,
 		"VIDEOS":   c.VideoFile,

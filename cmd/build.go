@@ -1,17 +1,12 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
 
-	"gonum.org/v1/plot/plotter"
-	"gonum.org/v1/plot/vg"
-
 	"github.com/spf13/cobra"
-	"gonum.org/v1/plot"
 )
 
 var (
@@ -89,6 +84,8 @@ type detailsInput struct {
 	RTPInPlotSVG   template.HTML
 	RTCPOutPlotSVG template.HTML
 	RTCPInPlotSVG  template.HTML
+
+	CC template.HTML
 }
 
 func buildResultDetailPage(input *TestCase, outDir string) error {
@@ -103,77 +100,59 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 	}
 	defer index.Close()
 
-	ssimSVG, err := plotTimeSeriesSVG(input.PerFrameSSIM, "SSIM", "Frames", "SSIM")
+	ssim, err := input.plotPerFrameVideoMetric("SSIM")
 	if err != nil {
 		return err
 	}
-	psnrSVG, err := plotTimeSeriesSVG(input.PerFramePSNR, "PSNR", "Frames", "PSNR")
+	psnr, err := input.plotPerFrameVideoMetric("PSNR")
 	if err != nil {
 		return err
 	}
-	sentRTP, err := plotTimeSeriesSVG(input.SentRTP, "RTP Out", "s", "Bytes")
+
+	rtpOut, err := input.plotRTPMetric("Sent RTP bytes", input.SentRTP)
 	if err != nil {
 		return err
 	}
-	receivedRTP, err := plotTimeSeriesSVG(input.ReceivedRTP, "RTP In", "s", "Bytes")
+	rtpIn, err := input.plotRTPMetric("Received RTP bytes", input.ReceivedRTP)
 	if err != nil {
 		return err
 	}
-	//sentRTCP, err := plotTimeSeriesSVG(input.SentRTCP, "RTCP Out", "s", "Bytes")
-	//if err != nil {
-	//	return err
-	//}
-	//receivedRTCP, err := plotTimeSeriesSVG(input.ReceivedRTCP, "RTCP In", "s", "Bytes")
-	//if err != nil {
-	//	return err
-	//}
+
+	var rtcpOut template.HTML
+	if len(input.SentRTCP) > 0 {
+		rtcpOut, err = input.plotRTPMetric("Sent RTCP bytes", input.SentRTCP)
+		if err != nil {
+			return err
+		}
+	}
+
+	var rtcpIn template.HTML
+	if len(input.ReceivedRTCP) > 0 {
+		rtcpIn, err = input.plotRTPMetric("Received RTCP bytes", input.ReceivedRTCP)
+		if err != nil {
+			return err
+		}
+	}
+
+	var cc template.HTML
+	if len(input.CCTargetBitrate) > 0 {
+		cc, err = input.plotCCBitrate()
+		if err != nil {
+			return err
+		}
+	}
 
 	details := detailsInput{
-		AverageSSIM:   input.AverageSSIM,
-		AveragePSNR:   input.AveragePSNR,
-		SSIMPlotSVG:   template.HTML(ssimSVG),
-		PSNRPlotSVG:   template.HTML(psnrSVG),
-		RTPOutPlotSVG: template.HTML(sentRTP),
-		RTPInPlotSVG:  template.HTML(receivedRTP),
-		//RTCPOutPlotSVG: template.HTML(sentRTCP),
-		//RTCPInPlotSVG:  template.HTML(receivedRTCP),
+		AverageSSIM:    input.AverageSSIM,
+		AveragePSNR:    input.AveragePSNR,
+		SSIMPlotSVG:    ssim,
+		PSNRPlotSVG:    psnr,
+		RTPOutPlotSVG:  rtpOut,
+		RTPInPlotSVG:   rtpIn,
+		RTCPOutPlotSVG: rtcpOut,
+		RTCPInPlotSVG:  rtcpIn,
+		CC:             cc,
 	}
 
 	return templates.ExecuteTemplate(index, "detail.html", details)
-}
-
-func plotTimeSeriesSVG(data []IntToFloat64, title, xLabel, yLabel string) (string, error) {
-	p := plot.New()
-	p.Title.Text = title
-	p.X.Label.Text = xLabel
-	p.Y.Label.Text = yLabel
-
-	s, err := plotter.NewLine(getPoints(data))
-	if err != nil {
-		return "", err
-	}
-
-	p.Add(s)
-
-	writerTo, err := p.WriterTo(4*vg.Inch, 2*vg.Inch, "svg")
-	if err != nil {
-		return "", err
-	}
-
-	buf := new(bytes.Buffer)
-	_, err = writerTo.WriteTo(buf)
-	if err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
-}
-
-func getPoints(table []IntToFloat64) plotter.XYs {
-	pts := make(plotter.XYs, len(table))
-	for i, r := range table {
-		pts[i].X = float64(r.Key)
-		pts[i].Y = r.Value
-	}
-	return pts
 }

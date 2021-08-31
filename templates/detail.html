@@ -13,25 +13,71 @@
 
 <div class="container-fluid">
 
-  <h1>RTP over QUIC Test Runner</h1>
-
-  <h3>Measurement Results</h3>
-
-  <div>
-    {{ .SSIMPlotSVG }}
-
-    {{ .PSNRPlotSVG }}
+  <div class="row">
+    <h1>RTP over QUIC Test Runner</h1>
+    <h2>Measurement Results</h3>
   </div>
 
-  <div>
-    {{ .RTPOutPlotSVG }}
+  <div class="row justify-content-md-center">
+    <div class="col-md-auto">
+      <h3>Video Metrics</h3>
+    </div>
+  </div>
+  <div class="row justify-content-md-center">
+    <div class="col-sm-auto">
+      {{ .SSIMPlotSVG }}
+    </div>
 
-    {{ .RTPInPlotSVG }}
+    <div class="col-sm-auto">
+      {{ .PSNRPlotSVG }}
+    </div>
   </div>
 
-  {{ if .RTCPOutPlotSVG }} {{ .RTCPOutPlotSVG }} {{end}}
+  <div class="row justify-content-md-center">
+    <div class="col-md-auto">
+      <h3>Network Metrics</h3>
+    </div>
+  </div>
 
-  {{ if .RTCPInPlotSVG }} {{ .RTCPInPlotSVG }} {{end}}
+  <div class="row justify-content-md-center">
+    <div class="col-md-auto">
+      <h4>Sender Metrics</h3>
+    </div>
+  </div>
+
+  <div class="row justify-content-md-center">
+    <div class="col-sm-auto">
+      {{ .RTPOutPlotSVG }}
+    </div>
+
+    {{ if .RTCPInPlotSVG }}
+      <div class="col-sm-auto">
+        {{ .RTCPInPlotSVG }}
+      </div>
+    {{ end }}
+
+    {{ if .CC }}
+      <div class="col-sm-auto">
+        {{ .CC }}
+      </div>
+    {{ end }}
+  </div>
+
+  <div class="row justify-content-md-center">
+    <div class="col-md-auto">
+      <h4>Receiver Metrics</h3>
+    </div>
+  </div>
+
+  <div class="row justify-content-md-center">
+    <div class="col-sm-auto">
+      {{ .RTPInPlotSVG }}
+    </div>
+
+    <div class="col-sm-auto">
+      {{ .RTCPOutPlotSVG }}
+    </div>
+  </div>
 
 </div>
 

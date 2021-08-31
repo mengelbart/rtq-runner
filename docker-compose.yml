@@ -33,6 +33,7 @@ services:
       - ROLE=sender
       - QLOGDIR=/logs/qlog
       - RTPLOGDIR=/logs/rtp
+      - CCLOGFILE=/logs/cc.log
       - LOG_FILE=/logs/qrt.log
       - RECEIVER=193.167.0.100:4242
       - VIDEOS=$VIDEOS
