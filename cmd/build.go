@@ -74,8 +74,9 @@ func buildHomePage(input *AggregatedResults, outDir string) error {
 }
 
 type detailsInput struct {
-	AverageSSIM float64
-	AveragePSNR float64
+	AverageSSIM          float64
+	AveragePSNR          float64
+	AverageTargetBitrate float64
 
 	SSIMPlotSVG template.HTML
 	PSNRPlotSVG template.HTML
@@ -143,15 +144,16 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 	}
 
 	details := detailsInput{
-		AverageSSIM:    input.AverageSSIM,
-		AveragePSNR:    input.AveragePSNR,
-		SSIMPlotSVG:    ssim,
-		PSNRPlotSVG:    psnr,
-		RTPOutPlotSVG:  rtpOut,
-		RTPInPlotSVG:   rtpIn,
-		RTCPOutPlotSVG: rtcpOut,
-		RTCPInPlotSVG:  rtcpIn,
-		CC:             cc,
+		AverageSSIM:          input.AverageSSIM,
+		AveragePSNR:          input.AveragePSNR,
+		AverageTargetBitrate: input.AverageTargetBitrate,
+		SSIMPlotSVG:          ssim,
+		PSNRPlotSVG:          psnr,
+		RTPOutPlotSVG:        rtpOut,
+		RTPInPlotSVG:         rtpIn,
+		RTCPOutPlotSVG:       rtcpOut,
+		RTCPInPlotSVG:        rtcpIn,
+		CC:                   cc,
 	}
 
 	return templates.ExecuteTemplate(index, "detail.html", details)

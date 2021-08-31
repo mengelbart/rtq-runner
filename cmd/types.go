@@ -34,8 +34,9 @@ type Config struct {
 }
 
 type TestCase struct {
-	AverageSSIM float64 `json:"average_ssim"`
-	AveragePSNR float64 `json:"average_psnr"`
+	AverageSSIM          float64 `json:"average_ssim"`
+	AveragePSNR          float64 `json:"average_psnr"`
+	AverageTargetBitrate float64 `json:"average_cc_target_bitrate"`
 
 	PerFrameSSIM []IntToFloat64 `json:"per_frame_ssim"`
 	PerFramePSNR []IntToFloat64 `json:"per_frame_psnr"`

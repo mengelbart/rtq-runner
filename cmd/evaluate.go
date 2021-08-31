@@ -91,8 +91,10 @@ func eval(outFilename string) error {
 		Config: config,
 		TestCases: map[string]*TestCase{
 			"simple-p2p": {
-				AverageSSIM:  math.Round(averageMapValues(ssimTable)*100) / 100,
-				AveragePSNR:  math.Round(averageMapValues(psnrTable)*100) / 100,
+				AverageSSIM:          math.Round(averageMapValues(ssimTable)*100) / 100,
+				AveragePSNR:          math.Round(averageMapValues(psnrTable)*100) / 100,
+				AverageTargetBitrate: math.Round(averageMapValues(ccTargetBitrateTable)*100) / 100,
+
 				PerFrameSSIM: ssimTable,
 				PerFramePSNR: psnrTable,
 
@@ -207,6 +209,9 @@ func getMetricTable(filename string, comma rune, valueGetter func(i int, row []s
 }
 
 func averageMapValues(table []IntToFloat64) float64 {
+	if len(table) <= 0 {
+		return float64(0)
+	}
 	sum := 0.0
 	for _, x := range table {
 		sum += x.Value
