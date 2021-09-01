@@ -166,7 +166,7 @@ func eval(outFilename string) error {
 				QLOGReceiverPacketsSent:     binToSecondsFloat64(qlogReceiverPacketsSent),
 				QLOGReceiverPacketsReceived: binToSecondsFloat64(qlogReceiverPacketsReceived),
 
-				QLOGCongestionWindow: qlogCongestionWindow,
+				QLOGCongestionWindow: rect(qlogCongestionWindow),
 
 				CCTargetBitrate: ccTargetBitrateTable,
 			},
@@ -249,6 +249,18 @@ func binToSecondsFloat64(table []Float64ToFloat64) []Float64ToFloat64 {
 	}
 	return result
 
+}
+
+func rect(table []Float64ToFloat64) []Float64ToFloat64 {
+	result := make([]Float64ToFloat64, 2*len(table)-1)
+	for i := 0; i < len(table)-1; i++ {
+		result = append(result, table[i])
+		result = append(result, Float64ToFloat64{
+			Key:   table[i+1].Key,
+			Value: table[i].Value,
+		})
+	}
+	return result
 }
 
 func binToSeconds(table []IntToFloat64) []IntToFloat64 {
