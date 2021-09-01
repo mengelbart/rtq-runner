@@ -166,7 +166,7 @@ func eval(outFilename string) error {
 				QLOGReceiverPacketsSent:     binToSecondsFloat64(qlogReceiverPacketsSent),
 				QLOGReceiverPacketsReceived: binToSecondsFloat64(qlogReceiverPacketsReceived),
 
-				QLOGCongestionWindow: binToSecondsFloat64(qlogCongestionWindow),
+				QLOGCongestionWindow: qlogCongestionWindow,
 
 				CCTargetBitrate: ccTargetBitrateTable,
 			},
@@ -345,7 +345,10 @@ func (q *qlogDataGetter) get() ([]Float64ToFloat64, error) {
 	var table []Float64ToFloat64
 	for _, r := range qlogData.Trace.Events.Events {
 		if r.Name == q.metric {
-			table = append(table, qlogGetters[q.metric](r))
+			v, err := qlogGetters[q.metric](r)
+			if err == nil {
+				table = append(table, v)
+			}
 		}
 	}
 	return table, nil
@@ -357,29 +360,32 @@ const (
 	qlogMetricsUpdatedEventName = "recovery:metrics_updated"
 )
 
-var qlogGetters = map[string]func(r qlog.EventWrapper) Float64ToFloat64{
+var qlogGetters = map[string]func(r qlog.EventWrapper) (Float64ToFloat64, error){
 	qlogPacketSentEventName:     qlogPacketSentGetter,
 	qlogPacketReceivedEventName: qlogPacketReceivedGetter,
 	qlogMetricsUpdatedEventName: qlogCongestionWindowGetter,
 }
 
-func qlogPacketSentGetter(r qlog.EventWrapper) Float64ToFloat64 {
+func qlogPacketSentGetter(r qlog.EventWrapper) (Float64ToFloat64, error) {
 	return Float64ToFloat64{
 		Key:   r.RelativeTime,
 		Value: float64(r.Data.PacketSent.Raw.Length),
-	}
+	}, nil
 }
 
-func qlogPacketReceivedGetter(r qlog.EventWrapper) Float64ToFloat64 {
+func qlogPacketReceivedGetter(r qlog.EventWrapper) (Float64ToFloat64, error) {
 	return Float64ToFloat64{
 		Key:   r.RelativeTime,
 		Value: float64(r.Data.PacketReceived.Raw.Length),
-	}
+	}, nil
 }
 
-func qlogCongestionWindowGetter(r qlog.EventWrapper) Float64ToFloat64 {
+func qlogCongestionWindowGetter(r qlog.EventWrapper) (Float64ToFloat64, error) {
+	if r.Data.MetricsUpdated.CongestionWindow <= 0 {
+		return Float64ToFloat64{}, fmt.Errorf("value not given")
+	}
 	return Float64ToFloat64{
 		Key:   r.RelativeTime,
 		Value: float64(r.Data.MetricsUpdated.CongestionWindow),
-	}
+	}, nil
 }
