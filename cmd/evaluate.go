@@ -236,11 +236,20 @@ func (g *csvValueGetter) get(i int, row []string) plotter.XY {
 	}
 }
 
-func rect(table plotter.XYs) plotter.XYs {
+func rect(table plotter.XYs) (result plotter.XYs) {
 	if len(table) <= 0 {
 		return table
 	}
-	result := make(plotter.XYs, 2*len(table)-1)
+	if len(table) <= 1 {
+		x0 := plotter.XY{
+			X: 0,
+			Y: table[0].Y,
+		}
+		result = append(result, x0)
+		result = append(result, table[0])
+		fmt.Println(result)
+		return result
+	}
 	for i := 0; i < len(table)-1; i++ {
 		result = append(result, table[i])
 		result = append(result, plotter.XY{

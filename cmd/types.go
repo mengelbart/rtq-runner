@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"strconv"
 	"time"
 
 	"gonum.org/v1/plot"
@@ -113,8 +114,9 @@ func (t *TestCase) plotCCBitrate() (template.HTML, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.Title.Text = "CC Target Bitrate"
-	p.X.Label.Text = "ms"
+	p.X.Label.Text = "s"
 	p.Y.Label.Text = "bit/s"
+	p.X.Tick.Marker = secondsTicker{}
 
 	l, err := plotter.NewLine(t.CCTargetBitrate)
 	if err != nil {
@@ -125,41 +127,14 @@ func (t *TestCase) plotCCBitrate() (template.HTML, error) {
 	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
 }
 
-func (t *TestCase) plotMetric(title string, data plotter.XYs) (template.HTML, error) {
+func (t *TestCase) plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (template.HTML, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.Title.Text = title
 	p.X.Label.Text = "s"
 	p.Y.Label.Text = "Bytes"
 	p.Legend.Top = false
-
-	var l *plotter.Line
-	var err error
-
-	l, err = plotter.NewLine(data)
-	if err != nil {
-		return "", err
-	}
-	p.Add(l)
-	p.Legend.Add(title, l)
-
-	_, _, ymax, ymin := plotter.XYRange(data)
-
-	p.Y.Max = ymax
-	p.Y.Min = ymin
-
-	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
-}
-
-func (t *TestCase) plotMetric1(title string, data plotter.XYs) (template.HTML, error) {
-	p := plot.New()
-	p.Add(plotter.NewGrid())
-	p.Title.Text = title
-	p.X.Label.Text = "s"
-	p.Y.Label.Text = "Bytes"
-	p.Legend.Top = false
-
-	p.X.Tick.Marker = secondsTicker{}
+	p.X.Tick.Marker = ticker
 
 	var l *plotter.Line
 	var err error
@@ -187,7 +162,11 @@ func (secondsTicker) Ticks(min, max float64) []plot.Tick {
 		if t.Label == "" { // Skip minor ticks, they are fine.
 			continue
 		}
-		tks[i].Label = t.Label[:2]
+		l, err := strconv.ParseFloat(t.Label, 64)
+		if err != nil {
+			panic(err)
+		}
+		tks[i].Label = fmt.Sprintf("%.2f", l/1000.0)
 	}
 	return tks
 

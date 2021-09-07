@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"gonum.org/v1/plot"
 )
 
 var (
@@ -117,18 +118,18 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 		return err
 	}
 
-	rtpOut, err := input.plotMetric("Sent RTP bytes", input.SentRTP)
+	rtpOut, err := input.plotMetric("Sent RTP bytes", plot.DefaultTicks{}, input.SentRTP)
 	if err != nil {
 		return err
 	}
-	rtpIn, err := input.plotMetric("Received RTP bytes", input.ReceivedRTP)
+	rtpIn, err := input.plotMetric("Received RTP bytes", plot.DefaultTicks{}, input.ReceivedRTP)
 	if err != nil {
 		return err
 	}
 
 	var rtcpOut template.HTML
 	if len(input.SentRTCP) > 0 {
-		rtcpOut, err = input.plotMetric("Sent RTCP bytes", input.SentRTCP)
+		rtcpOut, err = input.plotMetric("Sent RTCP bytes", plot.DefaultTicks{}, input.SentRTCP)
 		if err != nil {
 			return err
 		}
@@ -136,7 +137,7 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 
 	var rtcpIn template.HTML
 	if len(input.ReceivedRTCP) > 0 {
-		rtcpIn, err = input.plotMetric("Received RTCP bytes", input.ReceivedRTCP)
+		rtcpIn, err = input.plotMetric("Received RTCP bytes", plot.DefaultTicks{}, input.ReceivedRTCP)
 		if err != nil {
 			return err
 		}
@@ -144,32 +145,32 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 
 	var qsps, qspr, qrps, qrpr, qcc template.HTML
 	if len(input.QLOGSenderPacketsSent) > 0 {
-		qsps, err = input.plotMetric("QLOG bytes sent", input.QLOGSenderPacketsSent)
+		qsps, err = input.plotMetric("QLOG bytes sent", plot.DefaultTicks{}, input.QLOGSenderPacketsSent)
 		if err != nil {
 			return err
 		}
 	}
 	if len(input.QLOGSenderPacketsReceived) > 0 {
-		qspr, err = input.plotMetric("QLOG bytes received", input.QLOGSenderPacketsReceived)
+		qspr, err = input.plotMetric("QLOG bytes received", plot.DefaultTicks{}, input.QLOGSenderPacketsReceived)
 		if err != nil {
 			return err
 		}
 	}
 	if len(input.QLOGReceiverPacketsSent) > 0 {
-		qrps, err = input.plotMetric("QLOG bytes sent", input.QLOGReceiverPacketsSent)
+		qrps, err = input.plotMetric("QLOG bytes sent", plot.DefaultTicks{}, input.QLOGReceiverPacketsSent)
 		if err != nil {
 			return err
 		}
 	}
 	if len(input.QLOGReceiverPacketsReceived) > 0 {
-		qrpr, err = input.plotMetric("QLOG bytes received", input.QLOGReceiverPacketsReceived)
+		qrpr, err = input.plotMetric("QLOG bytes received", plot.DefaultTicks{}, input.QLOGReceiverPacketsReceived)
 		if err != nil {
 			return err
 		}
 	}
 
-	if len(input.QLOGCongestionWindow) > 0 {
-		qcc, err = input.plotMetric1("QLOG Congestion Window", input.QLOGCongestionWindow)
+	if len(input.QLOGCongestionWindow) > 2 {
+		qcc, err = input.plotMetric("QLOG Congestion Window", secondsTicker{}, input.QLOGCongestionWindow)
 		if err != nil {
 			return err
 		}
