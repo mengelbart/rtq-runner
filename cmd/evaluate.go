@@ -237,6 +237,9 @@ func (g *csvValueGetter) get(i int, row []string) plotter.XY {
 }
 
 func rect(table plotter.XYs) plotter.XYs {
+	if len(table) <= 0 {
+		return table
+	}
 	result := make(plotter.XYs, 2*len(table)-1)
 	for i := 0; i < len(table)-1; i++ {
 		result = append(result, table[i])
