@@ -16,6 +16,7 @@ import (
 
 	"github.com/mengelbart/qlog"
 	"github.com/spf13/cobra"
+	"gonum.org/v1/plot/plotter"
 )
 
 var (
@@ -42,40 +43,40 @@ func eval(outFilename string) error {
 		return fmt.Errorf("failed to calculate video metrics: %w", err)
 	}
 
-	ssimTable, err := getMetricTable("ssim.log", ' ', ssimValueGetter)
+	ssimTable, err := getXYsFromCSV("ssim.log", ' ', ssimValueGetter)
 	if err != nil {
 		return fmt.Errorf("failed to get ssim metrics table: %w", err)
 	}
 
-	psnrTable, err := getMetricTable("psnr.log", ' ', psnrValueGetter)
+	psnrTable, err := getXYsFromCSV("psnr.log", ' ', psnrValueGetter)
 	if err != nil {
 		return fmt.Errorf("failed to get psnr metrics table: %w", err)
 	}
 
 	g := csvValueGetter{timeColumn: 2, valueColumn: 8}
-	sentRTPTable, err := getMetricTable("sender_logs/rtp/rtp_out.log", '\t', g.get)
+	sentRTPTable, err := getXYsFromCSV("sender_logs/rtp/rtp_out.log", '\t', g.get)
 	if err != nil {
 		return fmt.Errorf("failed to get rtp out metrics table: %w", err)
 	}
 	g = csvValueGetter{timeColumn: 2, valueColumn: 3}
-	receivedRTCPTable, err := getMetricTable("sender_logs/rtp/rtcp_in.log", '\t', g.get)
+	receivedRTCPTable, err := getXYsFromCSV("sender_logs/rtp/rtcp_in.log", '\t', g.get)
 	if err != nil {
 		return err
 	}
 	g = csvValueGetter{timeColumn: 2, valueColumn: 8}
-	receivedRTPTable, err := getMetricTable("receiver_logs/rtp/rtp_in.log", '\t', g.get)
+	receivedRTPTable, err := getXYsFromCSV("receiver_logs/rtp/rtp_in.log", '\t', g.get)
 	if err != nil {
 		return fmt.Errorf("failed to get rtp in metrics table: %w", err)
 	}
 	g = csvValueGetter{timeColumn: 2, valueColumn: 3}
-	sentRTCPTable, err := getMetricTable("receiver_logs/rtp/rtcp_out.log", '\t', g.get)
+	sentRTCPTable, err := getXYsFromCSV("receiver_logs/rtp/rtcp_out.log", '\t', g.get)
 	if err != nil {
 		return err
 	}
 
-	var qlogSenderPacketsSent []Float64ToFloat64
-	var qlogSenderPacketsReceived []Float64ToFloat64
-	var qlogCongestionWindow []Float64ToFloat64
+	var qlogSenderPacketsSent plotter.XYs
+	var qlogSenderPacketsReceived plotter.XYs
+	var qlogCongestionWindow plotter.XYs
 	files, err := filepath.Glob("sender_logs/qlog/*.qlog")
 	if err != nil {
 		return err
@@ -103,8 +104,8 @@ func eval(outFilename string) error {
 		}
 	}
 
-	var qlogReceiverPacketsSent []Float64ToFloat64
-	var qlogReceiverPacketsReceived []Float64ToFloat64
+	var qlogReceiverPacketsSent plotter.XYs
+	var qlogReceiverPacketsReceived plotter.XYs
 	files, err = filepath.Glob("receiver_logs/qlog/*.qlog")
 	if err != nil {
 		return err
@@ -126,10 +127,10 @@ func eval(outFilename string) error {
 		}
 	}
 
-	var ccTargetBitrateTable []IntToFloat64
+	var ccTargetBitrateTable plotter.XYs
 	if _, err = os.Stat("sender_logs/cc.log"); err == nil {
 		g = csvValueGetter{timeColumn: 0, valueColumn: 1}
-		ccTargetBitrateTable, err = getMetricTable("sender_logs/cc.log", ',', g.get)
+		ccTargetBitrateTable, err = getXYsFromCSV("sender_logs/cc.log", ',', g.get)
 		if err != nil {
 			return err
 		}
@@ -160,11 +161,11 @@ func eval(outFilename string) error {
 				ReceivedRTP: binToSeconds(receivedRTPTable),
 				SentRTCP:    binToSeconds(sentRTCPTable),
 
-				QLOGSenderPacketsSent:     binToSecondsFloat64(qlogSenderPacketsSent),
-				QLOGSenderPacketsReceived: binToSecondsFloat64(qlogSenderPacketsReceived),
+				QLOGSenderPacketsSent:     binToSeconds(qlogSenderPacketsSent),
+				QLOGSenderPacketsReceived: binToSeconds(qlogSenderPacketsReceived),
 
-				QLOGReceiverPacketsSent:     binToSecondsFloat64(qlogReceiverPacketsSent),
-				QLOGReceiverPacketsReceived: binToSecondsFloat64(qlogReceiverPacketsReceived),
+				QLOGReceiverPacketsSent:     binToSeconds(qlogReceiverPacketsSent),
+				QLOGReceiverPacketsReceived: binToSeconds(qlogReceiverPacketsReceived),
 
 				QLOGCongestionWindow: rect(qlogCongestionWindow),
 
@@ -190,27 +191,27 @@ func parseAndBound(n string, bitSize int) (float64, error) {
 	return float / (1 + float), nil
 }
 
-func ssimValueGetter(i int, row []string) IntToFloat64 {
+func ssimValueGetter(i int, row []string) plotter.XY {
 	vStr := strings.Split(row[ssimValueColumn], ":")[1]
 	v, err := strconv.ParseFloat(vStr, 64)
 	if err != nil {
 		panic(err)
 	}
-	return IntToFloat64{
-		Key:   i,
-		Value: v,
+	return plotter.XY{
+		X: float64(i),
+		Y: v,
 	}
 }
 
-func psnrValueGetter(i int, row []string) IntToFloat64 {
+func psnrValueGetter(i int, row []string) plotter.XY {
 	vStr := strings.Split(row[psnrValueColumn], ":")[1]
 	v, err := parseAndBound(vStr, 64)
 	if err != nil {
 		panic(err)
 	}
-	return IntToFloat64{
-		Key:   i,
-		Value: v,
+	return plotter.XY{
+		X: float64(i),
+		Y: v,
 	}
 }
 
@@ -219,7 +220,7 @@ type csvValueGetter struct {
 	valueColumn int
 }
 
-func (g *csvValueGetter) get(i int, row []string) IntToFloat64 {
+func (g *csvValueGetter) get(i int, row []string) plotter.XY {
 	k, err := strconv.ParseInt(row[g.timeColumn], 10, 64)
 	if err != nil {
 		panic(err)
@@ -229,52 +230,59 @@ func (g *csvValueGetter) get(i int, row []string) IntToFloat64 {
 	if err != nil {
 		panic(err)
 	}
-	return IntToFloat64{
-		Key:   int(ts.Milliseconds()),
-		Value: v,
+	return plotter.XY{
+		X: float64(ts.Milliseconds()),
+		Y: v,
 	}
 }
 
-func binToSecondsFloat64(table []Float64ToFloat64) []Float64ToFloat64 {
-	if len(table) <= 0 {
-		return table
-	}
-	bins := int(math.Ceil(float64(table[len(table)-1].Key) / 1000.0))
-	result := make([]Float64ToFloat64, bins)
-	for _, v := range table {
-		b := math.Floor(float64(v.Key) / 1000.0)
-		bin := int(b)
-		result[bin].Key = b
-		result[bin].Value += v.Value
-	}
-	return result
-
-}
-
-func rect(table []Float64ToFloat64) []Float64ToFloat64 {
-	result := make([]Float64ToFloat64, 2*len(table)-1)
+func rect(table plotter.XYs) plotter.XYs {
+	result := make(plotter.XYs, 2*len(table)-1)
 	for i := 0; i < len(table)-1; i++ {
 		result = append(result, table[i])
-		result = append(result, Float64ToFloat64{
-			Key:   table[i+1].Key,
-			Value: table[i].Value,
+		result = append(result, plotter.XY{
+			X: table[i+1].X,
+			Y: table[i].Y,
 		})
 	}
 	return result
 }
 
-func binToSeconds(table []IntToFloat64) []IntToFloat64 {
+func binToSeconds(table plotter.XYs) plotter.XYs {
 	if len(table) <= 0 {
 		return table
 	}
-	bins := int(math.Ceil(float64(table[len(table)-1].Key) / 1000.0))
-	result := make([]IntToFloat64, bins)
+	bins := int(math.Ceil(float64(table[len(table)-1].X) / 1000.0))
+	result := make(plotter.XYs, bins)
 	for _, v := range table {
-		bin := int(math.Floor(float64(v.Key) / 1000.0))
-		result[bin].Key = bin
-		result[bin].Value += v.Value
+		bin := int(math.Floor(float64(v.X) / 1000.0))
+		result[bin].X = float64(bin)
+		result[bin].Y += v.Y
 	}
 	return result
+}
+
+func getXYsFromCSV(filename string, comma rune, valueGetter func(i int, row []string) plotter.XY) (plotter.XYs, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	r := csv.NewReader(file)
+	r.Comma = comma
+	r.TrimLeadingSpace = true
+
+	var xys plotter.XYs
+	for i := 0; ; i++ {
+		row, err := r.Read()
+		if err != nil {
+			if err == io.EOF || errors.Is(err, csv.ErrFieldCount) {
+				return xys, nil
+			}
+			return xys, err
+		}
+		xys = append(xys, valueGetter(i, row))
+	}
 }
 
 func getMetricTable(filename string, comma rune, valueGetter func(i int, row []string) IntToFloat64) ([]IntToFloat64, error) {
@@ -300,13 +308,13 @@ func getMetricTable(filename string, comma rune, valueGetter func(i int, row []s
 	}
 }
 
-func averageMapValues(table []IntToFloat64) float64 {
+func averageMapValues(table plotter.XYs) float64 {
 	if len(table) <= 0 {
 		return float64(0)
 	}
 	sum := 0.0
 	for _, x := range table {
-		sum += x.Value
+		sum += x.Y
 	}
 	return sum / float64(len(table))
 }
@@ -339,7 +347,7 @@ type qlogDataGetter struct {
 	metric string
 }
 
-func (q *qlogDataGetter) get() ([]Float64ToFloat64, error) {
+func (q *qlogDataGetter) get() (plotter.XYs, error) {
 	qlogFile, err := os.Open(q.path)
 	if err != nil {
 		return nil, err
@@ -354,7 +362,7 @@ func (q *qlogDataGetter) get() ([]Float64ToFloat64, error) {
 		return nil, fmt.Errorf("failed to unmarshal qlog file: %w", err)
 	}
 
-	var table []Float64ToFloat64
+	var table plotter.XYs
 	for _, r := range qlogData.Trace.Events.Events {
 		if r.Name == q.metric {
 			v, err := qlogGetters[q.metric](r)
@@ -372,32 +380,32 @@ const (
 	qlogMetricsUpdatedEventName = "recovery:metrics_updated"
 )
 
-var qlogGetters = map[string]func(r qlog.EventWrapper) (Float64ToFloat64, error){
+var qlogGetters = map[string]func(r qlog.EventWrapper) (plotter.XY, error){
 	qlogPacketSentEventName:     qlogPacketSentGetter,
 	qlogPacketReceivedEventName: qlogPacketReceivedGetter,
 	qlogMetricsUpdatedEventName: qlogCongestionWindowGetter,
 }
 
-func qlogPacketSentGetter(r qlog.EventWrapper) (Float64ToFloat64, error) {
-	return Float64ToFloat64{
-		Key:   r.RelativeTime,
-		Value: float64(r.Data.PacketSent.Raw.Length),
+func qlogPacketSentGetter(r qlog.EventWrapper) (plotter.XY, error) {
+	return plotter.XY{
+		X: r.RelativeTime,
+		Y: float64(r.Data.PacketSent.Raw.Length),
 	}, nil
 }
 
-func qlogPacketReceivedGetter(r qlog.EventWrapper) (Float64ToFloat64, error) {
-	return Float64ToFloat64{
-		Key:   r.RelativeTime,
-		Value: float64(r.Data.PacketReceived.Raw.Length),
+func qlogPacketReceivedGetter(r qlog.EventWrapper) (plotter.XY, error) {
+	return plotter.XY{
+		X: r.RelativeTime,
+		Y: float64(r.Data.PacketReceived.Raw.Length),
 	}, nil
 }
 
-func qlogCongestionWindowGetter(r qlog.EventWrapper) (Float64ToFloat64, error) {
+func qlogCongestionWindowGetter(r qlog.EventWrapper) (plotter.XY, error) {
 	if r.Data.MetricsUpdated.CongestionWindow <= 0 {
-		return Float64ToFloat64{}, fmt.Errorf("value not given")
+		return plotter.XY{}, fmt.Errorf("value not given")
 	}
-	return Float64ToFloat64{
-		Key:   r.RelativeTime,
-		Value: float64(r.Data.MetricsUpdated.CongestionWindow),
+	return plotter.XY{
+		X: r.RelativeTime,
+		Y: float64(r.Data.MetricsUpdated.CongestionWindow),
 	}, nil
 }

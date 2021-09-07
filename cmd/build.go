@@ -117,18 +117,18 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 		return err
 	}
 
-	rtpOut, err := input.plotRTPMetric("Sent RTP bytes", input.SentRTP)
+	rtpOut, err := input.plotMetric("Sent RTP bytes", input.SentRTP)
 	if err != nil {
 		return err
 	}
-	rtpIn, err := input.plotRTPMetric("Received RTP bytes", input.ReceivedRTP)
+	rtpIn, err := input.plotMetric("Received RTP bytes", input.ReceivedRTP)
 	if err != nil {
 		return err
 	}
 
 	var rtcpOut template.HTML
 	if len(input.SentRTCP) > 0 {
-		rtcpOut, err = input.plotRTPMetric("Sent RTCP bytes", input.SentRTCP)
+		rtcpOut, err = input.plotMetric("Sent RTCP bytes", input.SentRTCP)
 		if err != nil {
 			return err
 		}
@@ -136,7 +136,7 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 
 	var rtcpIn template.HTML
 	if len(input.ReceivedRTCP) > 0 {
-		rtcpIn, err = input.plotRTPMetric("Received RTCP bytes", input.ReceivedRTCP)
+		rtcpIn, err = input.plotMetric("Received RTCP bytes", input.ReceivedRTCP)
 		if err != nil {
 			return err
 		}
@@ -144,32 +144,32 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 
 	var qsps, qspr, qrps, qrpr, qcc template.HTML
 	if len(input.QLOGSenderPacketsSent) > 0 {
-		qsps, err = input.plotQLOGMetric("QLOG bytes sent", input.QLOGSenderPacketsSent)
+		qsps, err = input.plotMetric("QLOG bytes sent", input.QLOGSenderPacketsSent)
 		if err != nil {
 			return err
 		}
 	}
 	if len(input.QLOGSenderPacketsReceived) > 0 {
-		qspr, err = input.plotQLOGMetric("QLOG bytes received", input.QLOGSenderPacketsReceived)
+		qspr, err = input.plotMetric("QLOG bytes received", input.QLOGSenderPacketsReceived)
 		if err != nil {
 			return err
 		}
 	}
 	if len(input.QLOGReceiverPacketsSent) > 0 {
-		qrps, err = input.plotQLOGMetric("QLOG bytes sent", input.QLOGReceiverPacketsSent)
+		qrps, err = input.plotMetric("QLOG bytes sent", input.QLOGReceiverPacketsSent)
 		if err != nil {
 			return err
 		}
 	}
 	if len(input.QLOGReceiverPacketsReceived) > 0 {
-		qrpr, err = input.plotQLOGMetric("QLOG bytes received", input.QLOGReceiverPacketsReceived)
+		qrpr, err = input.plotMetric("QLOG bytes received", input.QLOGReceiverPacketsReceived)
 		if err != nil {
 			return err
 		}
 	}
 
 	if len(input.QLOGCongestionWindow) > 0 {
-		qcc, err = input.plotQLOGMetric("QLOG Congestion Window", input.QLOGCongestionWindow)
+		qcc, err = input.plotMetric1("QLOG Congestion Window", input.QLOGCongestionWindow)
 		if err != nil {
 			return err
 		}

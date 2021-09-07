@@ -38,48 +38,24 @@ type TestCase struct {
 	AveragePSNR          float64 `json:"average_psnr"`
 	AverageTargetBitrate float64 `json:"average_cc_target_bitrate"`
 
-	PerFrameSSIM []IntToFloat64 `json:"per_frame_ssim"`
-	PerFramePSNR []IntToFloat64 `json:"per_frame_psnr"`
+	PerFrameSSIM plotter.XYs `json:"per_frame_ssim"`
+	PerFramePSNR plotter.XYs `json:"per_frame_psnr"`
 
-	SentRTP  []IntToFloat64 `json:"sent_rtp"`
-	SentRTCP []IntToFloat64 `json:"sent_rtcp"`
+	SentRTP  plotter.XYs `json:"sent_rtp"`
+	SentRTCP plotter.XYs `json:"sent_rtcp"`
 
-	ReceivedRTP  []IntToFloat64 `json:"received_rtp"`
-	ReceivedRTCP []IntToFloat64 `json:"received_rtcp"`
+	ReceivedRTP  plotter.XYs `json:"received_rtp"`
+	ReceivedRTCP plotter.XYs `json:"received_rtcp"`
 
-	QLOGSenderPacketsSent     []Float64ToFloat64 `json:"qlog_sender_packets_sent"`
-	QLOGSenderPacketsReceived []Float64ToFloat64 `json:"qlog_sender_packets_received"`
+	QLOGSenderPacketsSent     plotter.XYs `json:"qlog_sender_packets_sent"`
+	QLOGSenderPacketsReceived plotter.XYs `json:"qlog_sender_packets_received"`
 
-	QLOGReceiverPacketsSent     []Float64ToFloat64 `json:"qlog_receiver_packets_sent"`
-	QLOGReceiverPacketsReceived []Float64ToFloat64 `json:"qlog_receiver_packets_received"`
+	QLOGReceiverPacketsSent     plotter.XYs `json:"qlog_receiver_packets_sent"`
+	QLOGReceiverPacketsReceived plotter.XYs `json:"qlog_receiver_packets_received"`
 
-	QLOGCongestionWindow []Float64ToFloat64 `json:"qlog_congestion_window"`
+	QLOGCongestionWindow plotter.XYs `json:"qlog_congestion_window"`
 
-	CCTargetBitrate []IntToFloat64 `json:"cc_target_bitrate"`
-}
-
-func (t *TestCase) getVideoMetric(m string) []IntToFloat64 {
-	switch m {
-	case "PSNR":
-		return t.PerFramePSNR
-	case "SSIM":
-		return t.PerFrameSSIM
-	}
-	panic(fmt.Errorf("unknown video metric %s", m))
-}
-
-func (t *TestCase) getRTPMetric(m string) []IntToFloat64 {
-	switch m {
-	case "SentRTP":
-		return t.SentRTP
-	case "ReceivedRTP":
-		return t.ReceivedRTP
-	case "SentRTCP":
-		return t.SentRTCP
-	case "ReceivedRTCP":
-		return t.ReceivedRTCP
-	}
-	panic(fmt.Errorf("unknown rtp metric %s", m))
+	CCTargetBitrate plotter.XYs `json:"cc_target_bitrate"`
 }
 
 type Float64ToFloat64 struct {
@@ -124,7 +100,7 @@ func (t *TestCase) plotPerFrameVideoMetric(metric string) (template.HTML, error)
 	p.X.Label.Text = "Frames"
 	p.Y.Label.Text = metric
 
-	l, err := plotter.NewLine(getXYs(t.PerFramePSNR))
+	l, err := plotter.NewLine(t.PerFramePSNR)
 	if err != nil {
 		return "", err
 	}
@@ -140,7 +116,7 @@ func (t *TestCase) plotCCBitrate() (template.HTML, error) {
 	p.X.Label.Text = "ms"
 	p.Y.Label.Text = "bit/s"
 
-	l, err := plotter.NewLine(getXYs(t.CCTargetBitrate))
+	l, err := plotter.NewLine(t.CCTargetBitrate)
 	if err != nil {
 		return "", err
 	}
@@ -149,32 +125,7 @@ func (t *TestCase) plotCCBitrate() (template.HTML, error) {
 	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
 }
 
-func (t *TestCase) plotQLOGMetric(title string, table []Float64ToFloat64) (template.HTML, error) {
-	p := plot.New()
-	p.Add(plotter.NewGrid())
-	p.Title.Text = title
-	p.X.Label.Text = "ms"
-	p.Y.Label.Text = "Bytes"
-	p.Legend.Top = false
-
-	var l *plotter.Line
-	var err error
-
-	data := getXYsFloat64(table)
-	l, err = plotter.NewLine(data)
-	if err != nil {
-		return "", err
-	}
-	p.Add(l)
-	p.Legend.Add(title, l)
-
-	p.Y.Max = data.max
-	p.Y.Min = data.min
-
-	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
-}
-
-func (t *TestCase) plotRTPMetric(title string, table []IntToFloat64) (template.HTML, error) {
+func (t *TestCase) plotMetric(title string, data plotter.XYs) (template.HTML, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.Title.Text = title
@@ -185,19 +136,6 @@ func (t *TestCase) plotRTPMetric(title string, table []IntToFloat64) (template.H
 	var l *plotter.Line
 	var err error
 
-	//l, err := plotter.NewLine(getXYs([]IntToFloat64{
-	//	{Key: 0, Value: 1.25e+6},
-	//	{Key: table[len(table)-1].Key, Value: 1.25e+6},
-	//}))
-	//if err != nil {
-	//	return "", err
-	//}
-	////l.FillColor = color.RGBA{R: 255, A: 255}
-	//l.Color = color.RGBA{R: 255, A: 255}
-	//p.Add(l)
-	//p.Legend.Add("Bandwidth", l)
-
-	data := getXYs(table)
 	l, err = plotter.NewLine(data)
 	if err != nil {
 		return "", err
@@ -205,55 +143,52 @@ func (t *TestCase) plotRTPMetric(title string, table []IntToFloat64) (template.H
 	p.Add(l)
 	p.Legend.Add(title, l)
 
-	p.Y.Max = data.max
-	p.Y.Min = data.min
+	_, _, ymax, ymin := plotter.XYRange(data)
+
+	p.Y.Max = ymax
+	p.Y.Min = ymin
 
 	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
 }
 
-type maxXYs struct {
-	plotter.XYs
-	min, max float64
+func (t *TestCase) plotMetric1(title string, data plotter.XYs) (template.HTML, error) {
+	p := plot.New()
+	p.Add(plotter.NewGrid())
+	p.Title.Text = title
+	p.X.Label.Text = "s"
+	p.Y.Label.Text = "Bytes"
+	p.Legend.Top = false
+
+	p.X.Tick.Marker = secondsTicker{}
+
+	var l *plotter.Line
+	var err error
+
+	l, err = plotter.NewLine(data)
+	if err != nil {
+		return "", err
+	}
+	p.Add(l)
+	p.Legend.Add(title, l)
+
+	_, _, ymax, ymin := plotter.XYRange(data)
+
+	p.Y.Max = ymax
+	p.Y.Min = ymin
+
+	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
 }
 
-// TODO: Refactor XY getters and remove redundant code
+type secondsTicker struct{}
 
-func getXYs(table []IntToFloat64) maxXYs {
-	max, min := float64(0), float64(0)
-	pts := make(plotter.XYs, len(table))
-	for i, r := range table {
-		pts[i].X = float64(r.Key)
-		pts[i].Y = r.Value
-		if r.Value > max {
-			max = r.Value
+func (secondsTicker) Ticks(min, max float64) []plot.Tick {
+	tks := plot.DefaultTicks{}.Ticks(min, max)
+	for i, t := range tks {
+		if t.Label == "" { // Skip minor ticks, they are fine.
+			continue
 		}
-		if r.Value < min {
-			min = r.Value
-		}
+		tks[i].Label = t.Label[:2]
 	}
-	return maxXYs{
-		XYs: pts,
-		max: max,
-		min: min,
-	}
-}
+	return tks
 
-func getXYsFloat64(table []Float64ToFloat64) maxXYs {
-	max, min := float64(0), float64(0)
-	pts := make(plotter.XYs, len(table))
-	for i, r := range table {
-		pts[i].X = r.Key
-		pts[i].Y = r.Value
-		if r.Value > max {
-			max = r.Value
-		}
-		if r.Value < min {
-			min = r.Value
-		}
-	}
-	return maxXYs{
-		XYs: pts,
-		max: max,
-		min: min,
-	}
 }
