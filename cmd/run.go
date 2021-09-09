@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -13,14 +14,18 @@ import (
 var (
 	runDate        int64
 	implementation string
-	videoFile      string
+	testcase       string
 	timeout        time.Duration
 )
 
+var scenarioParameterStrings = map[string]string{
+	"simple-p2p": "simple-p2p --delay=%v --bandwidth=%v --queue=%v",
+}
+
 func init() {
 	runCmd.Flags().Int64VarP(&runDate, "date", "d", time.Now().Unix(), "Unix Timestamp in seconds since epoch")
-	runCmd.Flags().StringVarP(&implementation, "implementation", "i", "rtq-go", "implementation from implementation.json to use")
-	runCmd.Flags().StringVarP(&videoFile, "video-file", "v", "/input/sintel_trailer.mkv", "video stream file")
+	runCmd.Flags().StringVarP(&implementation, "implementation", "i", "rtq-go-scream", "implementation from implementation.json to use")
+	runCmd.Flags().StringVarP(&testcase, "testcase", "c", "simple-p2p-1", "test case to run")
 	runCmd.Flags().DurationVarP(&timeout, "timeout", "t", 5*time.Minute, "max time to wait before cancelling the test run")
 
 	rootCmd.AddCommand(runCmd)
@@ -40,13 +45,34 @@ var runCmd = &cobra.Command{
 			return fmt.Errorf("implementation not found: %v", implementation)
 		}
 		i.Name = implementation
+
+		var ts TestCases
+		err = parseJSONFile("testcases.json", &ts)
+		if err != nil {
+			return err
+		}
+		t, ok := ts[testcase]
+		if !ok {
+			return fmt.Errorf("testcase not found: %v", testcase)
+		}
+		t.Name = testcase
+
 		return run(&Config{
 			Date:           time.Unix(runDate, 0),
 			Implementation: i,
-			VideoFile:      videoFile,
+			TestCase:       t,
 			Timeout:        timeout,
 		})
 	},
+}
+
+func getScenarioString(scenario Scenario) string {
+	return fmt.Sprintf(
+		scenarioParameterStrings[scenario.Name],
+		scenario.Delay,
+		scenario.Bandwidth,
+		scenario.Queue,
+	)
 }
 
 func run(c *Config) error {
@@ -55,17 +81,17 @@ func run(c *Config) error {
 		return err
 	}
 
-	cmd := exec.Command("docker-compose", "up", "--abort-on-container-exit")
+	cmd := exec.Command("docker-compose", "up", "--abort-on-container-exit", "--force-recreate")
 
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 
 	cmd.Env = os.Environ()
 	for k, v := range map[string]string{
-		"SCENARIO": "simple-p2p --delay=15ms --bandwidth=1Mbps --queue=25",
+		"SCENARIO": getScenarioString(c.TestCase.Scenario),
 		"SENDER":   c.Implementation.Sender.Image,
 		"RECEIVER": c.Implementation.Receiver.Image,
-		"VIDEOS":   c.VideoFile,
+		"VIDEOS":   path.Join("input", c.TestCase.VideoFile.Name),
 
 		"INPUT":  "./input",
 		"OUTPUT": "./output",

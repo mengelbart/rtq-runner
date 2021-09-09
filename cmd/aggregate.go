@@ -33,9 +33,7 @@ var aggregateCmd = &cobra.Command{
 }
 
 func aggregate(inputDirname, outputFilename string, date time.Time) error {
-	aggregated := AggregatedResults{
-		Date: date,
-	}
+	aggregated := make(map[string]map[string]Result)
 
 	err := filepath.Walk(inputDirname, func(path string, info fs.FileInfo, err error) error {
 		if !info.IsDir() {
@@ -44,7 +42,16 @@ func aggregate(inputDirname, outputFilename string, date time.Time) error {
 			if err != nil {
 				return err
 			}
-			aggregated.Results = append(aggregated.Results, result)
+			implementation := result.Config.Implementation.Name
+			testcase := result.Config.TestCase.Name
+
+			if _, ok := aggregated[implementation]; !ok {
+				aggregated[implementation] = map[string]Result{
+					testcase: result,
+				}
+				return nil
+			}
+			aggregated[implementation][testcase] = result
 		}
 		return nil
 	})

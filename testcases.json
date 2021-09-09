@@ -1,0 +1,38 @@
+{
+  "simple-p2p-1": {
+    "videofile": {
+      "url": "https://storage.googleapis.com/inputvideos.mathis.dev/sintel_trailer.mkv",
+      "name": "sintel_trailer.mkv"
+    },
+    "scenario": {
+      "name": "simple-p2p",
+      "delay": "1ms",
+      "bandwidth": "1Mbps",
+      "queue": 25
+    }
+  },
+  "simple-p2p-2": {
+    "videofile": {
+      "url": "https://storage.googleapis.com/inputvideos.mathis.dev/sintel_trailer.mkv",
+      "name": "sintel_trailer.mkv"
+    },
+    "scenario": {
+      "name": "simple-p2p",
+      "delay": "50ms",
+      "bandwidth": "1Mbps",
+      "queue": 25
+    }
+  },
+  "simple-p2p-3": {
+    "videofile": {
+      "url": "https://storage.googleapis.com/inputvideos.mathis.dev/sintel_trailer.mkv",
+      "name": "sintel_trailer.mkv"
+    },
+    "scenario": {
+      "name": "simple-p2p",
+      "delay": "100ms",
+      "bandwidth": "1Mbps",
+      "queue": 25
+    }
+  }
+}

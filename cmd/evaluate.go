@@ -38,7 +38,16 @@ var evalCmd = &cobra.Command{
 }
 
 func eval(outFilename string) error {
-	err := calculateVideoMetrics("input/sintel_trailer.mkv", "output/out.mkv")
+	var config Config
+	err := parseJSONFile("config.json", &config)
+	if err != nil {
+		return err
+	}
+
+	err = calculateVideoMetrics(
+		fmt.Sprintf("input/%v", config.TestCase.VideoFile.Name),
+		"output/out.mkv",
+	)
 	if err != nil {
 		return fmt.Errorf("failed to calculate video metrics: %w", err)
 	}
@@ -138,39 +147,31 @@ func eval(outFilename string) error {
 		return err
 	}
 
-	var config Config
-	err = parseJSONFile("config.json", &config)
-	if err != nil {
-		return err
-	}
-
 	return saveToJSONFile(outFilename, &Result{
 		Config: config,
-		TestCases: map[string]*TestCase{
-			"simple-p2p": {
-				AverageSSIM:          math.Round(averageMapValues(ssimTable)*100) / 100,
-				AveragePSNR:          math.Round(averageMapValues(psnrTable)*100) / 100,
-				AverageTargetBitrate: math.Round(averageMapValues(ccTargetBitrateTable)*100) / 100,
+		Metrics: Metrics{
+			AverageSSIM:          math.Round(averageMapValues(ssimTable)*100) / 100,
+			AveragePSNR:          math.Round(averageMapValues(psnrTable)*100) / 100,
+			AverageTargetBitrate: math.Round(averageMapValues(ccTargetBitrateTable)*100) / 100,
 
-				PerFrameSSIM: ssimTable,
-				PerFramePSNR: psnrTable,
+			PerFrameSSIM: ssimTable,
+			PerFramePSNR: psnrTable,
 
-				SentRTP:      binToSeconds(sentRTPTable),
-				ReceivedRTCP: binToSeconds(receivedRTCPTable),
+			SentRTP:      binToSeconds(sentRTPTable),
+			ReceivedRTCP: binToSeconds(receivedRTCPTable),
 
-				ReceivedRTP: binToSeconds(receivedRTPTable),
-				SentRTCP:    binToSeconds(sentRTCPTable),
+			ReceivedRTP: binToSeconds(receivedRTPTable),
+			SentRTCP:    binToSeconds(sentRTCPTable),
 
-				QLOGSenderPacketsSent:     binToSeconds(qlogSenderPacketsSent),
-				QLOGSenderPacketsReceived: binToSeconds(qlogSenderPacketsReceived),
+			QLOGSenderPacketsSent:     binToSeconds(qlogSenderPacketsSent),
+			QLOGSenderPacketsReceived: binToSeconds(qlogSenderPacketsReceived),
 
-				QLOGReceiverPacketsSent:     binToSeconds(qlogReceiverPacketsSent),
-				QLOGReceiverPacketsReceived: binToSeconds(qlogReceiverPacketsReceived),
+			QLOGReceiverPacketsSent:     binToSeconds(qlogReceiverPacketsSent),
+			QLOGReceiverPacketsReceived: binToSeconds(qlogReceiverPacketsReceived),
 
-				QLOGCongestionWindow: rect(qlogCongestionWindow),
+			QLOGCongestionWindow: rect(qlogCongestionWindow),
 
-				CCTargetBitrate: ccTargetBitrateTable,
-			},
+			CCTargetBitrate: ccTargetBitrateTable,
 		},
 	})
 }
@@ -247,7 +248,6 @@ func rect(table plotter.XYs) (result plotter.XYs) {
 		}
 		result = append(result, x0)
 		result = append(result, table[0])
-		fmt.Println(result)
 		return result
 	}
 	for i := 0; i < len(table)-1; i++ {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"sort"
 	"strconv"
 	"time"
 
@@ -26,15 +27,39 @@ type Implementation struct {
 	Name     string   `json:"name"`
 }
 
+type TestCases map[string]TestCase
+
+type TestCase struct {
+	Name      string    `json:"name"`
+	VideoFile VideoFile `json:"videofile"`
+	Scenario  Scenario  `json:"scenario"`
+}
+
+type VideoFile struct {
+	URL  string `json:"url"`
+	Name string `json:"name"`
+}
+
+type Scenario struct {
+	Name      string `json:"name"`
+	Delay     string `json:"delay"`
+	Bandwidth string `json:"bandwidth"`
+	Queue     int    `json:"queue"`
+}
+
+func (s Scenario) String() string {
+	return fmt.Sprintf("%v: delay=%v, bandwidth=%v, queue=%v", s.Name, s.Delay, s.Bandwidth, s.Queue)
+}
+
 type Config struct {
 	Date           time.Time      `json:"date"`
 	DetailsLink    string         `json:"details_link"`
 	Implementation Implementation `json:"implementation"`
-	VideoFile      string         `json:"video_file"`
+	TestCase       TestCase       `json:"testcase"`
 	Timeout        time.Duration  `json:"timeout"`
 }
 
-type TestCase struct {
+type Metrics struct {
 	AverageSSIM          float64 `json:"average_ssim"`
 	AveragePSNR          float64 `json:"average_psnr"`
 	AverageTargetBitrate float64 `json:"average_cc_target_bitrate"`
@@ -69,16 +94,65 @@ type IntToFloat64 struct {
 	Value float64 `json:"value"`
 }
 
-type AggregatedResults struct {
-	Date time.Time `json:"date"`
+// map: "implementation" -> "testcase" -> Result
+type AggregatedResults map[string]map[string]*Result
 
-	Results []Result `json:"results"`
+func (r AggregatedResults) getTableHeaders() []IndexTableHeader {
+	result := []IndexTableHeader{}
+	dupMap := map[string]bool{}
+	for _, t := range r {
+		for name, r := range t {
+			if _, ok := dupMap[name]; !ok {
+				result = append(result, IndexTableHeader{
+					Header:  name,
+					Tooltip: r.Config.TestCase.Scenario.String(),
+				})
+				dupMap[name] = true
+			}
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Header < result[j].Header
+	})
+	result = append([]IndexTableHeader{
+		{
+			Header:  "Implementation",
+			Tooltip: "Implementation used in the experiment",
+		},
+	}, result...)
+	return result
+}
+
+func (r AggregatedResults) getTableRows(header []string) []IndexTableRow {
+	result := []IndexTableRow{}
+	for _, t := range r {
+		var impl Implementation
+		metrics := make([]*IndexMetric, len(header))
+		for i, h := range header {
+			if run, ok := t[h]; ok {
+				metrics[i] = &IndexMetric{
+					Link:    run.Config.DetailsLink,
+					Metrics: run.Metrics,
+				}
+				impl = run.Config.Implementation
+			}
+		}
+		next := IndexTableRow{
+			Implementation: impl,
+			Metrics:        metrics,
+		}
+		result = append(result, next)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Implementation.Name < result[j].Implementation.Name
+	})
+
+	return result
 }
 
 type Result struct {
-	Config Config `json:"config"`
-
-	TestCases map[string]*TestCase `json:"test_cases"`
+	Config  Config  `json:"config"`
+	Metrics Metrics `json:"metrics"`
 }
 
 func writePlot(p *plot.Plot, w, h font.Length) (template.HTML, error) {
@@ -94,7 +168,7 @@ func writePlot(p *plot.Plot, w, h font.Length) (template.HTML, error) {
 	return template.HTML(buf.String()), nil
 }
 
-func (t *TestCase) plotPerFrameVideoMetric(metric string) (template.HTML, error) {
+func (t *Metrics) plotPerFrameVideoMetric(metric string) (template.HTML, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.Title.Text = fmt.Sprintf("%s per Frame", metric)
@@ -110,7 +184,7 @@ func (t *TestCase) plotPerFrameVideoMetric(metric string) (template.HTML, error)
 	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
 }
 
-func (t *TestCase) plotCCBitrate() (template.HTML, error) {
+func (t *Metrics) plotCCBitrate() (template.HTML, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.Title.Text = "CC Target Bitrate"
@@ -127,7 +201,7 @@ func (t *TestCase) plotCCBitrate() (template.HTML, error) {
 	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
 }
 
-func (t *TestCase) plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (template.HTML, error) {
+func (t *Metrics) plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (template.HTML, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.Title.Text = title

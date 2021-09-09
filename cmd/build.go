@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"encoding/json"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -42,12 +42,13 @@ func buildHTML(inputFilename, templateDirname, outputDirname string) error {
 	}
 
 	templates = template.Must(template.ParseGlob(filepath.Join(templateDir, "*.html")))
-	for i, r := range result.Results {
-		for k, v := range r.TestCases {
-			detailLink := filepath.Join(fmt.Sprintf("%v", result.Date.Unix()), r.Config.Implementation.Name, k)
+
+	for i, t := range result {
+		for tc, r := range t {
+			detailLink := filepath.Join(i, tc)
 			detailDir := filepath.Join(outputDirname, detailLink)
-			result.Results[i].Config.DetailsLink = detailLink
-			err := buildResultDetailPage(v, detailDir)
+			r.Config.DetailsLink = detailLink
+			err := buildResultDetailPage(r.Config, &r.Metrics, detailDir)
 			if err != nil {
 				return err
 			}
@@ -71,10 +72,44 @@ func buildHomePage(input *AggregatedResults, outDir string) error {
 	}
 	defer index.Close()
 
-	return templates.ExecuteTemplate(index, "index.html", input)
+	var htmlInput IndexInput
+	htmlInput.TableHeaders = input.getTableHeaders()
+	htmlInput.TableRows = input.getTableRows(htmlInput.valueHeaders())
+
+	return templates.ExecuteTemplate(index, "index.html", htmlInput)
+}
+
+type IndexInput struct {
+	TableHeaders []IndexTableHeader
+	TableRows    []IndexTableRow
+}
+
+func (i IndexInput) valueHeaders() []string {
+	h := make([]string, len(i.TableHeaders))
+	for x := 0; x < len(i.TableHeaders); x++ {
+		h[x] = i.TableHeaders[x].Header
+	}
+	return h[1:]
+}
+
+type IndexTableHeader struct {
+	Header  string
+	Tooltip string
+}
+
+type IndexTableRow struct {
+	Implementation Implementation
+	Metrics        []*IndexMetric
+}
+
+type IndexMetric struct {
+	Link    string
+	Metrics Metrics
 }
 
 type detailsInput struct {
+	ConfigJSON string
+
 	AverageSSIM          float64
 	AveragePSNR          float64
 	AverageTargetBitrate float64
@@ -97,7 +132,7 @@ type detailsInput struct {
 	CC template.HTML
 }
 
-func buildResultDetailPage(input *TestCase, outDir string) error {
+func buildResultDetailPage(config Config, input *Metrics, outDir string) error {
 	err := os.MkdirAll(outDir, os.ModePerm)
 	if err != nil {
 		return err
@@ -108,6 +143,11 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 		return err
 	}
 	defer index.Close()
+
+	configJSON, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
 
 	ssim, err := input.plotPerFrameVideoMetric("SSIM")
 	if err != nil {
@@ -185,6 +225,8 @@ func buildResultDetailPage(input *TestCase, outDir string) error {
 	}
 
 	details := detailsInput{
+		ConfigJSON: string(configJSON),
+
 		AverageSSIM:                 input.AverageSSIM,
 		AveragePSNR:                 input.AveragePSNR,
 		AverageTargetBitrate:        input.AverageTargetBitrate,

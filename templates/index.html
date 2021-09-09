@@ -19,22 +19,29 @@
       <table class="table table-bordered">
         <thead>
           <tr>
-            <th>Implementation</th>
-            <th>Simple P2P</th>
+            {{ range .TableHeaders }}
+              <th data-bs-toggle="tooltip" data-bs-placement="top" title="{{ .Tooltip }}">{{ .Header }}</th>
+            {{ end }}
           </tr>
         </thead>
 
         <tbody>
-          {{ range .Results }}
+          {{ range .TableRows }}
           <tr>
-            <td>Send: <a href="{{ .Config.Implementation.Sender.URL }}" target="_blank">{{ .Config.Implementation.Sender.Image }}</a><br>
-              Recv: <a href="{{ .Config.Implementation.Receiver.URL }}" target="_blank">{{ .Config.Implementation.Receiver.Image }}</a></td>
-            <td>
-              <a href="{{ .Config.DetailsLink }}" class="btn btn-primary btn-sm">Link</a>
-              <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average SSIM: {{ (index .TestCases "simple-p2p").AverageSSIM }}">S: {{ (index .TestCases "simple-p2p").AverageSSIM }}</span>
-              <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average PSNR: {{ (index .TestCases "simple-p2p").AveragePSNR }}">P: {{ (index .TestCases "simple-p2p").AveragePSNR }}</span>
-              <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average Target Bitrate: {{ (index .TestCases "simple-p2p").AverageTargetBitrate }}">B: {{ (index .TestCases "simple-p2p").AverageTargetBitrate }}</span>
+            <td>Send: <a href="{{ .Implementation.Sender.URL }}" target="_blank">{{ .Implementation.Sender.Image }}</a><br>
+              Recv: <a href="{{ .Implementation.Receiver.URL }}" target="_blank">{{ .Implementation.Receiver.Image }}</a>
             </td>
+
+            {{ range .Metrics }}
+              <td>
+                {{ if . }}
+                  <a href="{{ .Link }}" class="btn btn-primary btn-sm">Link</a>
+                  <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average SSIM: {{ .Metrics.AverageSSIM }}">S: {{ .Metrics.AverageSSIM }}</span>
+                  <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average PSNR: {{ .Metrics.AveragePSNR }}">P: {{ .Metrics.AveragePSNR }}</span>
+                  <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average Target Bitrate: {{ .Metrics.AverageTargetBitrate }}">B: {{ .Metrics.AverageTargetBitrate }}</span>
+                {{ end }}
+              </td>
+            {{ end }}
           </tr>
           {{ end }}
         </tbody>
