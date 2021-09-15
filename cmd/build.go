@@ -129,7 +129,8 @@ type detailsInput struct {
 
 	QLOGCongestionWindow template.HTML
 
-	CC template.HTML
+	CCTargetBitrate template.HTML
+	CCSRTT          template.HTML
 }
 
 func buildResultDetailPage(config Config, input *Metrics, outDir string) error {
@@ -158,18 +159,18 @@ func buildResultDetailPage(config Config, input *Metrics, outDir string) error {
 		return err
 	}
 
-	rtpOut, err := input.plotMetric("Sent RTP bytes", plot.DefaultTicks{}, input.SentRTP)
+	rtpOut, err := plotMetric("Sent RTP bytes", plot.DefaultTicks{}, input.SentRTP)
 	if err != nil {
 		return err
 	}
-	rtpIn, err := input.plotMetric("Received RTP bytes", plot.DefaultTicks{}, input.ReceivedRTP)
+	rtpIn, err := plotMetric("Received RTP bytes", plot.DefaultTicks{}, input.ReceivedRTP)
 	if err != nil {
 		return err
 	}
 
 	var rtcpOut template.HTML
 	if len(input.SentRTCP) > 0 {
-		rtcpOut, err = input.plotMetric("Sent RTCP bytes", plot.DefaultTicks{}, input.SentRTCP)
+		rtcpOut, err = plotMetric("Sent RTCP bytes", plot.DefaultTicks{}, input.SentRTCP)
 		if err != nil {
 			return err
 		}
@@ -177,7 +178,7 @@ func buildResultDetailPage(config Config, input *Metrics, outDir string) error {
 
 	var rtcpIn template.HTML
 	if len(input.ReceivedRTCP) > 0 {
-		rtcpIn, err = input.plotMetric("Received RTCP bytes", plot.DefaultTicks{}, input.ReceivedRTCP)
+		rtcpIn, err = plotMetric("Received RTCP bytes", plot.DefaultTicks{}, input.ReceivedRTCP)
 		if err != nil {
 			return err
 		}
@@ -185,32 +186,32 @@ func buildResultDetailPage(config Config, input *Metrics, outDir string) error {
 
 	var qsps, qspr, qrps, qrpr, qcc template.HTML
 	if len(input.QLOGSenderPacketsSent) > 0 {
-		qsps, err = input.plotMetric("QLOG bytes sent", plot.DefaultTicks{}, input.QLOGSenderPacketsSent)
+		qsps, err = plotMetric("QLOG bytes sent", plot.DefaultTicks{}, input.QLOGSenderPacketsSent)
 		if err != nil {
 			return err
 		}
 	}
 	if len(input.QLOGSenderPacketsReceived) > 0 {
-		qspr, err = input.plotMetric("QLOG bytes received", plot.DefaultTicks{}, input.QLOGSenderPacketsReceived)
+		qspr, err = plotMetric("QLOG bytes received", plot.DefaultTicks{}, input.QLOGSenderPacketsReceived)
 		if err != nil {
 			return err
 		}
 	}
 	if len(input.QLOGReceiverPacketsSent) > 0 {
-		qrps, err = input.plotMetric("QLOG bytes sent", plot.DefaultTicks{}, input.QLOGReceiverPacketsSent)
+		qrps, err = plotMetric("QLOG bytes sent", plot.DefaultTicks{}, input.QLOGReceiverPacketsSent)
 		if err != nil {
 			return err
 		}
 	}
 	if len(input.QLOGReceiverPacketsReceived) > 0 {
-		qrpr, err = input.plotMetric("QLOG bytes received", plot.DefaultTicks{}, input.QLOGReceiverPacketsReceived)
+		qrpr, err = plotMetric("QLOG bytes received", plot.DefaultTicks{}, input.QLOGReceiverPacketsReceived)
 		if err != nil {
 			return err
 		}
 	}
 
 	if len(input.QLOGCongestionWindow) > 2 {
-		qcc, err = input.plotMetric("QLOG Congestion Window", secondsTicker{}, input.QLOGCongestionWindow)
+		qcc, err = plotMetric("QLOG Congestion Window", secondsTicker{}, input.QLOGCongestionWindow)
 		if err != nil {
 			return err
 		}
@@ -219,6 +220,13 @@ func buildResultDetailPage(config Config, input *Metrics, outDir string) error {
 	var cc template.HTML
 	if len(input.CCTargetBitrate) > 0 {
 		cc, err = input.plotCCBitrate()
+		if err != nil {
+			return err
+		}
+	}
+	var ccrtt template.HTML
+	if len(input.CCSRTT) > 0 {
+		ccrtt, err = input.plotSRTT()
 		if err != nil {
 			return err
 		}
@@ -241,7 +249,8 @@ func buildResultDetailPage(config Config, input *Metrics, outDir string) error {
 		QLOGReceiverPacketsSent:     qrps,
 		QLOGReceiverPacketsReceived: qrpr,
 		QLOGCongestionWindow:        qcc,
-		CC:                          cc,
+		CCTargetBitrate:             cc,
+		CCSRTT:                      ccrtt,
 	}
 
 	return templates.ExecuteTemplate(index, "detail.html", details)

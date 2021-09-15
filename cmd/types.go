@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"image/color"
 	"sort"
 	"strconv"
 	"time"
@@ -102,7 +103,9 @@ type Metrics struct {
 
 	QLOGCongestionWindow plotter.XYs `json:"qlog_congestion_window"`
 
-	CCTargetBitrate plotter.XYs `json:"cc_target_bitrate"`
+	CCTargetBitrate   plotter.XYs `json:"cc_target_bitrate"`
+	CCRateTransmitted plotter.XYs `json:"cc_rate_transmitted"`
+	CCSRTT            plotter.XYs `json:"cc_srtt"`
 }
 
 type Float64ToFloat64 struct {
@@ -210,19 +213,44 @@ func (t *Metrics) plotCCBitrate() (template.HTML, error) {
 	p.Add(plotter.NewGrid())
 	p.Title.Text = "CC Target Bitrate"
 	p.X.Label.Text = "s"
-	p.Y.Label.Text = "bit/s"
+	p.Y.Label.Text = "kbit/s"
 	p.X.Tick.Marker = secondsTicker{}
 
-	l, err := plotter.NewLine(t.CCTargetBitrate)
+	l1, err := plotter.NewLine(t.CCTargetBitrate)
 	if err != nil {
 		return "", err
 	}
-	p.Add(l)
+	l1.Color = color.RGBA{R: 255, A: 255}
+	p.Add(l1)
+
+	l2, err := plotter.NewLine(t.CCRateTransmitted)
+	if err != nil {
+		return "", err
+	}
+	l2.Color = color.RGBA{G: 255, A: 255}
+	p.Add(l2)
 
 	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
 }
 
-func (t *Metrics) plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (template.HTML, error) {
+func (t *Metrics) plotSRTT() (template.HTML, error) {
+	p := plot.New()
+	p.Add(plotter.NewGrid())
+	p.Title.Text = "CC RTT"
+	p.X.Label.Text = "s"
+	p.Y.Label.Text = "s"
+	p.X.Tick.Marker = secondsTicker{}
+
+	l1, err := plotter.NewLine(t.CCSRTT)
+	if err != nil {
+		return "", err
+	}
+	p.Add(l1)
+
+	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
+}
+
+func plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (template.HTML, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.Title.Text = title

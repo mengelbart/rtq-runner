@@ -138,12 +138,26 @@ func eval(outFilename string) error {
 	}
 
 	var ccTargetBitrateTable plotter.XYs
+	var ccRateTransmitted plotter.XYs
+	var ccSRTT plotter.XYs
 	if _, err = os.Stat("sender_logs/cc.log"); err == nil {
 		g = csvValueGetter{timeColumn: 0, valueColumn: 1}
 		ccTargetBitrateTable, err = getXYsFromCSV("sender_logs/cc.log", ',', g.get)
 		if err != nil {
 			return err
 		}
+		g = csvValueGetter{timeColumn: 0, valueColumn: 13}
+		ccRateTransmitted, err = getXYsFromCSV("sender_logs/cc.log", ',', g.get)
+		if err != nil {
+			return err
+		}
+
+		g = csvValueGetter{timeColumn: 0, valueColumn: 5}
+		ccSRTT, err = getXYsFromCSV("sender_logs/cc.log", ',', g.get)
+		if err != nil {
+			return err
+		}
+
 	} else if !os.IsNotExist(err) {
 		return err
 	}
@@ -172,7 +186,9 @@ func eval(outFilename string) error {
 
 			QLOGCongestionWindow: rect(qlogCongestionWindow),
 
-			CCTargetBitrate: ccTargetBitrateTable,
+			CCTargetBitrate:   ccTargetBitrateTable,
+			CCRateTransmitted: ccRateTransmitted,
+			CCSRTT:            ccSRTT,
 		},
 	})
 }
