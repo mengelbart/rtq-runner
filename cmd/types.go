@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"sort"
@@ -13,6 +15,35 @@ import (
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
 )
+
+type Duration struct {
+	time.Duration
+}
+
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.String())
+}
+
+func (d *Duration) UnmarshalJSON(b []byte) error {
+	var v interface{}
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	switch value := v.(type) {
+	case float64:
+		d.Duration = time.Duration(value)
+		return nil
+	case string:
+		var err error
+		d.Duration, err = time.ParseDuration(value)
+		if err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.New("invalid duration")
+	}
+}
 
 type Endpoint struct {
 	Image string `json:"image"`
@@ -32,23 +63,13 @@ type TestCases map[string]TestCase
 type TestCase struct {
 	Name      string    `json:"name"`
 	VideoFile VideoFile `json:"videofile"`
-	Scenario  Scenario  `json:"scenario"`
+
+	Phases []tcPhase `json:"phases"`
 }
 
 type VideoFile struct {
 	URL  string `json:"url"`
 	Name string `json:"name"`
-}
-
-type Scenario struct {
-	Name      string `json:"name"`
-	Delay     string `json:"delay"`
-	Bandwidth string `json:"bandwidth"`
-	Queue     int    `json:"queue"`
-}
-
-func (s Scenario) String() string {
-	return fmt.Sprintf("%v: delay=%v, bandwidth=%v, queue=%v", s.Name, s.Delay, s.Bandwidth, s.Queue)
 }
 
 type Config struct {
@@ -105,7 +126,7 @@ func (r AggregatedResults) getTableHeaders() []IndexTableHeader {
 			if _, ok := dupMap[name]; !ok {
 				result = append(result, IndexTableHeader{
 					Header:  name,
-					Tooltip: r.Config.TestCase.Scenario.String(),
+					Tooltip: r.Config.TestCase.Name,
 				})
 				dupMap[name] = true
 			}

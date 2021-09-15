@@ -2,37 +2,61 @@
   "simple-p2p-1": {
     "videofile": {
       "url": "https://storage.googleapis.com/inputvideos.mathis.dev/sintel_trailer.mkv",
-      "name": "sintel_trailer.mkv"
+      "name": "extended_deadline_cif.y4m"
     },
-    "scenario": {
-      "name": "simple-p2p",
-      "delay": "1ms",
-      "bandwidth": "1Mbps",
-      "queue": 25
-    }
+    "phases": [
+      {
+	"duration": "0",
+	"config": {
+	  "delay": "1ms",
+	  "bitrate": 1000000
+	}
+      }
+    ]
   },
   "simple-p2p-2": {
     "videofile": {
       "url": "https://storage.googleapis.com/inputvideos.mathis.dev/sintel_trailer.mkv",
-      "name": "sintel_trailer.mkv"
+      "name": "extended_deadline_cif.y4m"
     },
-    "scenario": {
-      "name": "simple-p2p",
-      "delay": "50ms",
-      "bandwidth": "1Mbps",
-      "queue": 25
-    }
+    "phases": [
+      {
+	"duration": "0",
+	"config": {
+	  "delay": "50ms",
+	  "bitrate": 1000000
+	}
+      }
+    ]
   },
   "simple-p2p-3": {
     "videofile": {
       "url": "https://storage.googleapis.com/inputvideos.mathis.dev/sintel_trailer.mkv",
-      "name": "sintel_trailer.mkv"
+      "name": "extended_deadline_cif.y4m"
     },
-    "scenario": {
-      "name": "simple-p2p",
-      "delay": "100ms",
-      "bandwidth": "1Mbps",
-      "queue": 25
-    }
+    "phases": [
+      {
+	"duration": "0",
+	"config": {
+	  "delay": "150ms",
+	  "bitrate": 1000000
+	}
+      }
+    ]
+  },
+  "simple-p2p-4": {
+    "videofile": {
+      "url": "https://storage.googleapis.com/inputvideos.mathis.dev/sintel_trailer.mkv",
+      "name": "extended_deadline_cif.y4m"
+    },
+    "phases": [
+      {
+	"duration": "0",
+	"config": {
+	  "delay": "300ms",
+	  "bitrate": 1000000
+	}
+      }
+    ]
   }
 }
