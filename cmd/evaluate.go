@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"bufio"
 	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
 	"os/exec"
@@ -364,10 +365,18 @@ func (q *qlogDataGetter) get() (plotter.XYs, error) {
 	if err != nil {
 		return nil, err
 	}
-	bs, err := ioutil.ReadAll(qlogFile)
-	if err != nil {
-		return nil, err
+
+	scanner := bufio.NewScanner(qlogFile)
+	scanner.Split(bufio.ScanLines)
+	var bs []byte
+	for scanner.Scan() {
+		b := scanner.Bytes()
+		x := map[string]interface{}{}
+		if err := json.Unmarshal(b, &x); err == nil {
+			bs = append(bs, append(b, []byte("\n")...)...)
+		}
 	}
+
 	var qlogData qlog.QLOGFileNDJSON
 	err = qlogData.UnmarshalNDJSON(bs)
 	if err != nil {
