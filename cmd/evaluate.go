@@ -283,9 +283,13 @@ func binToSeconds(table plotter.XYs) plotter.XYs {
 	}
 	bins := int(math.Ceil(float64(table[len(table)-1].X) / 1000.0))
 	result := make(plotter.XYs, bins)
+
+	for i := 0; i < bins; i++ {
+		result[i].X = float64(i)
+	}
+
 	for _, v := range table {
 		bin := int(math.Floor(float64(v.X) / 1000.0))
-		result[bin].X = float64(bin)
 		result[bin].Y += v.Y
 	}
 	return result
