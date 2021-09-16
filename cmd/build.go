@@ -210,7 +210,7 @@ func buildResultDetailPage(config Config, input *Metrics, outDir string) error {
 		}
 	}
 
-	if len(input.QLOGCongestionWindow) > 2 {
+	if len(input.QLOGCongestionWindow) > 1 {
 		qcc, err = plotMetric("QLOG Congestion Window", secondsTicker{}, input.QLOGCongestionWindow)
 		if err != nil {
 			return err
