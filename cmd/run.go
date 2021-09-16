@@ -136,13 +136,14 @@ func run(c *Config) error {
 			if waitingFor == 0 {
 				done = true
 			}
-			if time.Since(start) > 1*time.Minute {
+			if time.Since(start) > 5*time.Minute {
 				fmt.Printf("stopped waiting for container after 1 minute, skipping traffic control")
 				return
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
 
+		log.Printf("start traffic controller after %v\n", time.Since(start))
 		err = tc.run(ctx)
 		if err != nil {
 			log.Printf("tc controller failed: %v\n", err)
