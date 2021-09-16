@@ -6,7 +6,7 @@ services:
     container_name: sender
     hostname: sender
     stdin_open: true
-    tty: true
+    #tty: true
     #entrypoint: /bin/bash
     volumes:
       - ./$INPUT:/input:ro
@@ -27,7 +27,7 @@ services:
     container_name: receiver
     hostname: receiver
     stdin_open: true
-    tty: true
+    #tty: true
     #entrypoint: /bin/bash
     volumes:
       - $OUTPUT:/streams
