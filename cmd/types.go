@@ -269,10 +269,13 @@ func plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (template.HT
 	p.Add(l)
 	p.Legend.Add(title, l)
 
-	_, _, ymax, ymin := plotter.XYRange(data)
+	_, _, ymin, ymax := plotter.XYRange(data)
 
-	p.Y.Max = ymax
+	if ymax <= ymin {
+		ymin = 0
+	}
 	p.Y.Min = ymin
+	p.Y.Max = ymax
 
 	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
 }
