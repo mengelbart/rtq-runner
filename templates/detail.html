@@ -81,6 +81,11 @@
         {{ .CCTargetBitrate }}
       </div>
     {{ end }}
+    {{ if .CCSRTT }}
+      <div class="col-sm-auto">
+        {{ .CCSRTT }}
+      </div>
+    {{ end }}
   </div>
 
   <div class="row justify-content-md-center">
