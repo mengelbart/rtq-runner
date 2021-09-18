@@ -28,8 +28,8 @@
         <tbody>
           {{ range .TableRows }}
           <tr>
-            <td>Send: <a href="{{ .Implementation.Sender.URL }}" target="_blank">{{ .Implementation.Sender.Image }}</a><br>
-              Recv: <a href="{{ .Implementation.Receiver.URL }}" target="_blank">{{ .Implementation.Receiver.Image }}</a>
+            <td>Send: <a href="{{ .Implementation.Sender.URL }}" target="_blank">{{ .Implementation.Name }}</a><br>
+              Recv: <a href="{{ .Implementation.Receiver.URL }}" target="_blank">{{ .Implementation.Name }}</a>
             </td>
 
             {{ range .Metrics }}
