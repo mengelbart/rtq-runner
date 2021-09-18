@@ -16,6 +16,7 @@ services:
       - RTPLOGDIR=/logs/rtp
       - CCLOGFILE=/logs/cc.log
       - LOG_FILE=/logs/qrt.log
+      - STREAMLOGFILE=/logs/stream.log
       - RECEIVER=receiver:4242
       - VIDEOS=$VIDEOS
       - SENDER_PARAMS=-codec h264
@@ -36,6 +37,7 @@ services:
       - QLOGDIR=/logs/qlog
       - RTPLOGDIR=/logs/rtp
       - LOG_FILE=/logs/qrt.log
+      - STREAMLOGFILE=/logs/stream.log
       - DESTINATION=/streams/out.mkv
       - RECEIVER_PARAMS=-codec h264
     cap_add:
