@@ -47,8 +47,9 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 }
 
 type Endpoint struct {
-	Image string `json:"image"`
-	URL   string `json:"url"`
+	Image  string `json:"image"`
+	URL    string `json:"url"`
+	Params string `json:"params"`
 }
 
 type Implementations map[string]Implementation

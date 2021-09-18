@@ -19,7 +19,7 @@ services:
       - STREAMLOGFILE=/logs/stream.log
       - RECEIVER=receiver:4242
       - VIDEOS=$VIDEOS
-      - SENDER_PARAMS=-codec h264
+      - SENDER_PARAMS=$SENDER_PARAMS
     cap_add:
       - NET_ADMIN
 
@@ -39,7 +39,7 @@ services:
       - LOG_FILE=/logs/qrt.log
       - STREAMLOGFILE=/logs/stream.log
       - DESTINATION=/streams/out.mkv
-      - RECEIVER_PARAMS=-codec h264
+      - RECEIVER_PARAMS=$RECEIVER_PARAMS
     cap_add:
       - NET_ADMIN
 

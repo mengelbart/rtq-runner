@@ -87,8 +87,10 @@ func run(c *Config) error {
 		"RECEIVER": c.Implementation.Receiver.Image,
 		"VIDEOS":   path.Join("input", c.TestCase.VideoFile.Name),
 
-		"INPUT":  "./input",
-		"OUTPUT": "./output",
+		"SENDER_PARAMS":   c.Implementation.Sender.Params,
+		"RECEIVER_PARAMS": c.Implementation.Receiver.Params,
+		"INPUT":           "./input",
+		"OUTPUT":          "./output",
 	} {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%v=%v", k, v))
 	}
