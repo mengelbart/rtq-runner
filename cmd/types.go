@@ -109,16 +109,6 @@ type Metrics struct {
 	CCSRTT            plotter.XYs `json:"cc_srtt"`
 }
 
-type Float64ToFloat64 struct {
-	Key   float64 `json:"key"`
-	Value float64 `json:"value"`
-}
-
-type IntToFloat64 struct {
-	Key   int     `json:"key"`
-	Value float64 `json:"value"`
-}
-
 // map: "implementation" -> "testcase" -> Result
 type AggregatedResults map[string]map[string]*Result
 

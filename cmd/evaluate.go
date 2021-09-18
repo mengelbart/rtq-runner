@@ -318,29 +318,6 @@ func getXYsFromCSV(filename string, comma rune, valueGetter func(i int, row []st
 	}
 }
 
-func getMetricTable(filename string, comma rune, valueGetter func(i int, row []string) IntToFloat64) ([]IntToFloat64, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	r := csv.NewReader(file)
-	r.Comma = comma
-	r.TrimLeadingSpace = true
-
-	var table []IntToFloat64
-	for i := 0; ; i++ {
-		row, err := r.Read()
-		if err != nil {
-			if err == io.EOF || errors.Is(err, csv.ErrFieldCount) { // Ignore parse ErrFieldCount errors, as logs might be cut
-				return table, nil
-			}
-			return table, err
-		}
-		table = append(table, valueGetter(i, row))
-	}
-}
-
 func averageMapValues(table plotter.XYs) float64 {
 	if len(table) <= 0 {
 		return float64(0)

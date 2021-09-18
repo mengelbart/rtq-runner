@@ -22,10 +22,6 @@ var (
 	timeout        time.Duration
 )
 
-var scenarioParameterStrings = map[string]string{
-	"simple-p2p": "simple-p2p --delay=%v --bandwidth=%v --queue=%v",
-}
-
 func init() {
 	runCmd.Flags().Int64VarP(&runDate, "date", "d", time.Now().Unix(), "Unix Timestamp in seconds since epoch")
 	runCmd.Flags().StringVarP(&implementation, "implementation", "i", "rtq-go-scream", "implementation from implementation.json to use")
