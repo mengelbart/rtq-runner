@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"os"
 	"os/exec"
@@ -18,6 +19,18 @@ import (
 	"github.com/mengelbart/qlog"
 	"github.com/spf13/cobra"
 	"gonum.org/v1/plot/plotter"
+)
+
+const (
+	ssimLogFile            = "ssim.log"
+	psnrLogFile            = "psnr.log"
+	senderRTPOutLogFile    = "sender_logs/rtp/rtp_out.log"
+	receiverRTPInLogFile   = "receiver_logs/rtp/rtp_in.log"
+	senderRTCPInLogFile    = "sender_logs/rtp/rtcp_in.log"
+	receiverRTCPOutLogFile = "receiver_logs/rtp/rtcp_out.log"
+	receiverQLOGFileGLOB   = "receiver_logs/qlog/*.qlog"
+	senderQLOGFileGLOB     = "sender_logs/qlog/*.qlog"
+	senderLogCCFile        = "sender_logs/cc.log"
 )
 
 var (
@@ -39,158 +52,178 @@ var evalCmd = &cobra.Command{
 }
 
 func eval(outFilename string) error {
-	var config Config
-	err := parseJSONFile("config.json", &config)
+	result := &Result{}
+
+	err := parseJSONFile("config.json", &result.Config)
 	if err != nil {
 		return err
 	}
 
-	err = calculateVideoMetrics(
-		fmt.Sprintf("input/%v", config.TestCase.VideoFile.Name),
+	if err = calculateVideoMetrics(
+		fmt.Sprintf("input/%v", result.Config.TestCase.VideoFile.Name),
 		"output/out.mkv",
-	)
-	if err != nil {
-		return fmt.Errorf("failed to calculate video metrics: %w", err)
+	); err != nil {
+		log.Printf("failed to calculate video metrics: %v\n", err)
 	}
 
-	ssimTable, err := getXYsFromCSV("ssim.log", ' ', ssimValueGetter)
-	if err != nil {
-		return fmt.Errorf("failed to get ssim metrics table: %w", err)
+	if _, err := os.Stat(ssimLogFile); err == nil {
+		result.Metrics.PerFrameSSIM, err = getXYsFromCSV(ssimLogFile, ' ', ssimValueGetter)
+		if err != nil {
+			return fmt.Errorf("failed to get ssim metrics table: %w", err)
+		}
+		result.Metrics.AverageSSIM = math.Round(averageMapValues(result.Metrics.PerFrameSSIM)*100) / 100
+	} else if os.IsNotExist(err) {
+		fmt.Printf("%v not found: %v\n", ssimLogFile, err)
+	} else {
+		return fmt.Errorf("failed to stat %v: %w", ssimLogFile, err)
 	}
 
-	psnrTable, err := getXYsFromCSV("psnr.log", ' ', psnrValueGetter)
-	if err != nil {
-		return fmt.Errorf("failed to get psnr metrics table: %w", err)
+	if _, err := os.Stat(psnrLogFile); err == nil {
+		result.Metrics.PerFramePSNR, err = getXYsFromCSV(psnrLogFile, ' ', psnrValueGetter)
+		if err != nil {
+			return fmt.Errorf("failed to get psnr metrics table: %w", err)
+		}
+		result.Metrics.AveragePSNR = math.Round(averageMapValues(result.Metrics.PerFramePSNR)*100) / 100
+	} else if os.IsNotExist(err) {
+		fmt.Printf("%v not found: %v\n", psnrLogFile, err)
+	} else {
+		return fmt.Errorf("failed to stat %v: %w", psnrLogFile, err)
 	}
 
-	g := csvValueGetter{timeColumn: 2, valueColumn: 8}
-	sentRTPTable, err := getXYsFromCSV("sender_logs/rtp/rtp_out.log", '\t', g.get)
-	if err != nil {
-		return fmt.Errorf("failed to get rtp out metrics table: %w", err)
-	}
-	g = csvValueGetter{timeColumn: 2, valueColumn: 3}
-	receivedRTCPTable, err := getXYsFromCSV("sender_logs/rtp/rtcp_in.log", '\t', g.get)
-	if err != nil {
-		return err
-	}
-	g = csvValueGetter{timeColumn: 2, valueColumn: 8}
-	receivedRTPTable, err := getXYsFromCSV("receiver_logs/rtp/rtp_in.log", '\t', g.get)
-	if err != nil {
-		return fmt.Errorf("failed to get rtp in metrics table: %w", err)
-	}
-	g = csvValueGetter{timeColumn: 2, valueColumn: 3}
-	sentRTCPTable, err := getXYsFromCSV("receiver_logs/rtp/rtcp_out.log", '\t', g.get)
-	if err != nil {
-		return err
+	if _, err := os.Stat(senderRTPOutLogFile); err == nil {
+		g := csvValueGetter{timeColumn: 2, valueColumn: 8}
+		sentRTPTable, err := getXYsFromCSV(senderRTPOutLogFile, '\t', g.get)
+		if err != nil {
+			return fmt.Errorf("failed to get rtp out metrics table: %w", err)
+		}
+		result.Metrics.SentRTP = binToSeconds(sentRTPTable)
+	} else if os.IsNotExist(err) {
+		fmt.Printf("%v not found: %v\n", senderRTPOutLogFile, err)
+	} else {
+		return fmt.Errorf("failed to stat %v: %w", senderRTPOutLogFile, err)
 	}
 
-	var qlogSenderPacketsSent plotter.XYs
-	var qlogSenderPacketsReceived plotter.XYs
-	var qlogCongestionWindow plotter.XYs
-	files, err := filepath.Glob("sender_logs/qlog/*.qlog")
+	if _, err := os.Stat(receiverRTPInLogFile); err == nil {
+		g := csvValueGetter{timeColumn: 2, valueColumn: 8}
+		receivedRTPTable, err := getXYsFromCSV(receiverRTPInLogFile, '\t', g.get)
+		if err != nil {
+			return fmt.Errorf("failed to get rtp in metrics table: %w", err)
+		}
+		result.Metrics.ReceivedRTP = binToSeconds(receivedRTPTable)
+	} else if os.IsNotExist(err) {
+		fmt.Printf("%v not found: %v\n", receiverRTPInLogFile, err)
+	} else {
+		return fmt.Errorf("failed to stat %v: %w", receiverRTPInLogFile, err)
+	}
+
+	if _, err := os.Stat(receiverRTCPOutLogFile); err == nil {
+		g := csvValueGetter{timeColumn: 2, valueColumn: 3}
+		sentRTCPTable, err := getXYsFromCSV(receiverRTCPOutLogFile, '\t', g.get)
+		if err != nil {
+			return err
+		}
+		result.Metrics.SentRTCP = binToSeconds(sentRTCPTable)
+	} else if os.IsNotExist(err) {
+		fmt.Printf("%v not found: %v\n", receiverRTCPOutLogFile, err)
+	} else {
+		return fmt.Errorf("failed to stat %v: %w", receiverRTCPOutLogFile, err)
+	}
+
+	if _, err := os.Stat(senderRTCPInLogFile); err == nil {
+		g := csvValueGetter{timeColumn: 2, valueColumn: 3}
+		receivedRTCPTable, err := getXYsFromCSV(senderRTCPInLogFile, '\t', g.get)
+		if err != nil {
+			return err
+		}
+		result.Metrics.ReceivedRTCP = binToSeconds(receivedRTCPTable)
+	} else if os.IsNotExist(err) {
+		fmt.Printf("%v not found: %v\n", senderRTCPInLogFile, err)
+	} else {
+		return fmt.Errorf("failed to stat %v: %w", senderRTCPInLogFile, err)
+	}
+
+	files, err := filepath.Glob(senderQLOGFileGLOB)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to GLOB files: %v, %w", senderQLOGFileGLOB, err)
 	}
 	if len(files) > 0 {
 		if len(files) != 1 {
 			return fmt.Errorf("found invalid number of qlog files: %v", len(files))
 		}
 		q := qlogDataGetter{path: files[0], metric: qlogPacketSentEventName}
-		qlogSenderPacketsSent, err = q.get()
+		qlogSenderPacketsSent, err := q.get()
 		if err != nil {
 			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
 		}
+		result.Metrics.QLOGSenderPacketsSent = binToSeconds(qlogSenderPacketsSent)
 
 		q = qlogDataGetter{path: files[0], metric: qlogPacketReceivedEventName}
-		qlogSenderPacketsReceived, err = q.get()
+		qlogSenderPacketsReceived, err := q.get()
 		if err != nil {
 			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
 		}
+		result.Metrics.QLOGSenderPacketsReceived = binToSeconds(qlogSenderPacketsReceived)
 
 		q = qlogDataGetter{path: files[0], metric: qlogMetricsUpdatedEventName}
-		qlogCongestionWindow, err = q.get()
+		qlogCongestionWindow, err := q.get()
 		if err != nil {
 			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
 		}
+		result.Metrics.QLOGCongestionWindow = rect(qlogCongestionWindow)
 	}
 
-	var qlogReceiverPacketsSent plotter.XYs
-	var qlogReceiverPacketsReceived plotter.XYs
-	files, err = filepath.Glob("receiver_logs/qlog/*.qlog")
+	files, err = filepath.Glob(receiverQLOGFileGLOB)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to GLOB files: %v, %w", receiverQLOGFileGLOB, err)
 	}
 	if len(files) > 0 {
 		if len(files) != 1 {
 			return fmt.Errorf("found invalid number of qlog files: %v", len(files))
 		}
 		q := qlogDataGetter{path: files[0], metric: qlogPacketSentEventName}
-		qlogReceiverPacketsSent, err = q.get()
+		qlogReceiverPacketsSent, err := q.get()
 		if err != nil {
 			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
 		}
+		result.Metrics.QLOGReceiverPacketsReceived = binToSeconds(qlogReceiverPacketsSent)
 
 		q = qlogDataGetter{path: files[0], metric: qlogPacketReceivedEventName}
-		qlogReceiverPacketsReceived, err = q.get()
+		qlogReceiverPacketsReceived, err := q.get()
 		if err != nil {
 			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
 		}
+		result.Metrics.QLOGReceiverPacketsReceived = binToSeconds(qlogReceiverPacketsReceived)
 	}
 
-	var ccTargetBitrateTable plotter.XYs
-	var ccRateTransmitted plotter.XYs
-	var ccSRTT plotter.XYs
-	if _, err = os.Stat("sender_logs/cc.log"); err == nil {
-		g = csvValueGetter{timeColumn: 0, valueColumn: 1}
-		ccTargetBitrateTable, err = getXYsFromCSV("sender_logs/cc.log", ',', g.get)
+	if _, err = os.Stat(senderLogCCFile); err == nil {
+		g := csvValueGetter{timeColumn: 0, valueColumn: 1}
+		ccTargetBitrateTable, err := getXYsFromCSV("sender_logs/cc.log", ',', g.get)
 		if err != nil {
 			return err
 		}
+		result.Metrics.CCTargetBitrate = ccTargetBitrateTable
+
 		g = csvValueGetter{timeColumn: 0, valueColumn: 13}
-		ccRateTransmitted, err = getXYsFromCSV("sender_logs/cc.log", ',', g.get)
+		ccRateTransmitted, err := getXYsFromCSV("sender_logs/cc.log", ',', g.get)
 		if err != nil {
 			return err
 		}
+		result.Metrics.CCRateTransmitted = ccRateTransmitted
 
 		g = csvValueGetter{timeColumn: 0, valueColumn: 5}
-		ccSRTT, err = getXYsFromCSV("sender_logs/cc.log", ',', g.get)
+		ccSRTT, err := getXYsFromCSV("sender_logs/cc.log", ',', g.get)
 		if err != nil {
 			return err
 		}
+		result.Metrics.CCSRTT = ccSRTT
 
-	} else if !os.IsNotExist(err) {
-		return err
+	} else if os.IsNotExist(err) {
+		fmt.Printf("%v not found: %v\n", senderLogCCFile, err)
+	} else {
+		return fmt.Errorf("failed to stat %v: %w", senderLogCCFile, err)
 	}
 
-	return saveToJSONFile(outFilename, &Result{
-		Config: config,
-		Metrics: Metrics{
-			AverageSSIM:          math.Round(averageMapValues(ssimTable)*100) / 100,
-			AveragePSNR:          math.Round(averageMapValues(psnrTable)*100) / 100,
-			AverageTargetBitrate: math.Round(averageMapValues(ccTargetBitrateTable)*100) / 100,
-
-			PerFrameSSIM: ssimTable,
-			PerFramePSNR: psnrTable,
-
-			SentRTP:      binToSeconds(sentRTPTable),
-			ReceivedRTCP: binToSeconds(receivedRTCPTable),
-
-			ReceivedRTP: binToSeconds(receivedRTPTable),
-			SentRTCP:    binToSeconds(sentRTCPTable),
-
-			QLOGSenderPacketsSent:     binToSeconds(qlogSenderPacketsSent),
-			QLOGSenderPacketsReceived: binToSeconds(qlogSenderPacketsReceived),
-
-			QLOGReceiverPacketsSent:     binToSeconds(qlogReceiverPacketsSent),
-			QLOGReceiverPacketsReceived: binToSeconds(qlogReceiverPacketsReceived),
-
-			QLOGCongestionWindow: rect(qlogCongestionWindow),
-
-			CCTargetBitrate:   ccTargetBitrateTable,
-			CCRateTransmitted: ccRateTransmitted,
-			CCSRTT:            ccSRTT,
-		},
-	})
+	return saveToJSONFile(outFilename, result)
 }
 
 const (
@@ -209,28 +242,28 @@ func parseAndBound(n string, bitSize int) (float64, error) {
 	return float / (1 + float), nil
 }
 
-func ssimValueGetter(i int, row []string) plotter.XY {
+func ssimValueGetter(i int, row []string) (plotter.XY, error) {
 	vStr := strings.Split(row[ssimValueColumn], ":")[1]
 	v, err := strconv.ParseFloat(vStr, 64)
 	if err != nil {
-		panic(err)
+		return plotter.XY{}, err
 	}
 	return plotter.XY{
 		X: float64(i),
 		Y: v,
-	}
+	}, nil
 }
 
-func psnrValueGetter(i int, row []string) plotter.XY {
+func psnrValueGetter(i int, row []string) (plotter.XY, error) {
 	vStr := strings.Split(row[psnrValueColumn], ":")[1]
 	v, err := parseAndBound(vStr, 64)
 	if err != nil {
-		panic(err)
+		return plotter.XY{}, err
 	}
 	return plotter.XY{
 		X: float64(i),
 		Y: v,
-	}
+	}, nil
 }
 
 type csvValueGetter struct {
@@ -238,20 +271,20 @@ type csvValueGetter struct {
 	valueColumn int
 }
 
-func (g *csvValueGetter) get(i int, row []string) plotter.XY {
+func (g *csvValueGetter) get(i int, row []string) (plotter.XY, error) {
 	k, err := strconv.ParseInt(row[g.timeColumn], 10, 64)
 	if err != nil {
-		panic(err)
+		return plotter.XY{}, err
 	}
 	ts := time.Duration(k) * time.Millisecond
 	v, err := strconv.ParseFloat(row[g.valueColumn], 64)
 	if err != nil {
-		panic(err)
+		return plotter.XY{}, err
 	}
 	return plotter.XY{
 		X: float64(ts.Milliseconds()),
 		Y: v,
-	}
+	}, nil
 }
 
 func rect(table plotter.XYs) (result plotter.XYs) {
@@ -295,7 +328,9 @@ func binToSeconds(table plotter.XYs) plotter.XYs {
 	return result
 }
 
-func getXYsFromCSV(filename string, comma rune, valueGetter func(i int, row []string) plotter.XY) (plotter.XYs, error) {
+type valueGetter func(i int, row []string) (plotter.XY, error)
+
+func getXYsFromCSV(filename string, comma rune, get valueGetter) (plotter.XYs, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -314,7 +349,13 @@ func getXYsFromCSV(filename string, comma rune, valueGetter func(i int, row []st
 			}
 			return xys, err
 		}
-		xys = append(xys, valueGetter(i, row))
+
+		value, err := get(i, row)
+		if err != nil {
+			log.Printf("WARNING: failed to read value from CSV file '%v', assuming file was cut: %v\n", filename, err)
+			return xys, nil
+		}
+		xys = append(xys, value)
 	}
 }
 
