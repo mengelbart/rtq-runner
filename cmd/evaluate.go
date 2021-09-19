@@ -185,7 +185,7 @@ func eval(outFilename string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
 		}
-		result.Metrics.QLOGReceiverPacketsReceived = binToSeconds(qlogReceiverPacketsSent)
+		result.Metrics.QLOGReceiverPacketsSent = binToSeconds(qlogReceiverPacketsSent)
 
 		q = qlogDataGetter{path: files[0], metric: qlogPacketReceivedEventName}
 		qlogReceiverPacketsReceived, err := q.get()
