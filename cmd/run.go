@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -163,7 +162,7 @@ func run(c *Config) error {
 		if err != nil {
 			return err
 		}
-		return errors.New("process killed after timeout")
+		log.Printf("WARNING: process killed after timeout")
 	}
 	return nil
 }
