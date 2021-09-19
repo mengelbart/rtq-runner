@@ -183,14 +183,14 @@ func writePlot(p *plot.Plot, w, h font.Length) (template.HTML, error) {
 	return template.HTML(buf.String()), nil
 }
 
-func (t *Metrics) plotPerFrameVideoMetric(metric string) (template.HTML, error) {
+func (t *Metrics) plotPerFrameVideoMetric(name string, data plotter.XYs) (template.HTML, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
-	p.Title.Text = fmt.Sprintf("%s per Frame", metric)
+	p.Title.Text = fmt.Sprintf("%s per Frame", name)
 	p.X.Label.Text = "Frames"
-	p.Y.Label.Text = metric
+	p.Y.Label.Text = name
 
-	l, err := plotter.NewLine(t.PerFramePSNR)
+	l, err := plotter.NewLine(data)
 	if err != nil {
 		return "", err
 	}
@@ -207,19 +207,21 @@ func (t *Metrics) plotCCBitrate() (template.HTML, error) {
 	p.Y.Label.Text = "kbit/s"
 	p.X.Tick.Marker = secondsTicker{}
 
-	l1, err := plotter.NewLine(t.CCTargetBitrate)
+	rateTransmittedLine, err := plotter.NewLine(t.CCRateTransmitted)
 	if err != nil {
 		return "", err
 	}
-	l1.Color = color.RGBA{R: 255, A: 255}
-	p.Add(l1)
+	rateTransmittedLine.Color = color.RGBA{G: 255, A: 255}
+	p.Add(rateTransmittedLine)
+	p.Legend.Add("Rate Transmitted", rateTransmittedLine)
 
-	l2, err := plotter.NewLine(t.CCRateTransmitted)
+	targetBitrateLine, err := plotter.NewLine(t.CCTargetBitrate)
 	if err != nil {
 		return "", err
 	}
-	l2.Color = color.RGBA{G: 255, A: 255}
-	p.Add(l2)
+	targetBitrateLine.Color = color.RGBA{R: 255, A: 255}
+	p.Add(targetBitrateLine)
+	p.Legend.Add("Target Bitrate", targetBitrateLine)
 
 	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
 }

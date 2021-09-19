@@ -150,11 +150,11 @@ func buildResultDetailPage(config Config, input *Metrics, outDir string) error {
 		return err
 	}
 
-	ssim, err := input.plotPerFrameVideoMetric("SSIM")
+	ssim, err := input.plotPerFrameVideoMetric("SSIM", input.PerFrameSSIM)
 	if err != nil {
 		return err
 	}
-	psnr, err := input.plotPerFrameVideoMetric("PSNR")
+	psnr, err := input.plotPerFrameVideoMetric("PSNR", input.PerFramePSNR)
 	if err != nil {
 		return err
 	}
