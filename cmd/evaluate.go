@@ -202,6 +202,7 @@ func eval(outFilename string) error {
 			return err
 		}
 		result.Metrics.CCTargetBitrate = ccTargetBitrateTable
+		result.Metrics.AverageTargetBitrate = math.Round(averageMapValues(ccTargetBitrateTable)*100) / 100
 
 		g = csvValueGetter{timeColumn: 0, valueColumn: 13}
 		ccRateTransmitted, err := getXYsFromCSV("sender_logs/cc.log", ',', g.get)

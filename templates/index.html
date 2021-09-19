@@ -38,7 +38,9 @@
                   <a href="{{ .Link }}" class="btn btn-primary btn-sm">Link</a>
                   <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average SSIM: {{ .Metrics.AverageSSIM }}">S: {{ .Metrics.AverageSSIM }}</span>
                   <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average PSNR: {{ .Metrics.AveragePSNR }}">P: {{ .Metrics.AveragePSNR }}</span>
+                  {{ if .Metrics.AverageTargetBitrate }}
                   <span class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Average Target Bitrate: {{ .Metrics.AverageTargetBitrate }}">B: {{ .Metrics.AverageTargetBitrate }}</span>
+                  {{ end }}
                 {{ end }}
               </td>
             {{ end }}
