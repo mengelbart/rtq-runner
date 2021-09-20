@@ -110,7 +110,7 @@
     "receiver": {
       "image": "engelbart/rtq-go-endpoint:v0.0.14-nocc",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.14",
-      "params": "stream"
+      "params": "-stream"
     }
   },
   "rtq-go-stream-scream-infer-newreno": {
