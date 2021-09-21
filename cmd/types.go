@@ -17,6 +17,11 @@ import (
 	"gonum.org/v1/plot/vg"
 )
 
+const (
+	width  = 2.54 * 4 * vg.Centimeter
+	height = 3 * 1 * vg.Centimeter
+)
+
 type Duration struct {
 	time.Duration
 }
@@ -196,7 +201,7 @@ func (t *Metrics) plotPerFrameVideoMetric(name string, data plotter.XYs) (templa
 	}
 	p.Add(l)
 
-	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
+	return writePlot(p, width, height)
 }
 
 func (t *Metrics) plotCCBitrate() (template.HTML, error) {
@@ -206,14 +211,16 @@ func (t *Metrics) plotCCBitrate() (template.HTML, error) {
 	p.X.Label.Text = "s"
 	p.Y.Label.Text = "kbit/s"
 	p.X.Tick.Marker = secondsTicker{}
+	p.Legend.TextStyle.Font = font.From(plot.DefaultFont, 8)
+	p.Legend.ThumbnailWidth = 0.4 * vg.Centimeter
 
 	rateTransmittedLine, err := plotter.NewLine(t.CCRateTransmitted)
 	if err != nil {
 		return "", err
 	}
-	rateTransmittedLine.Color = color.RGBA{G: 255, A: 255}
+	rateTransmittedLine.Color = color.RGBA{B: 255, A: 255}
 	p.Add(rateTransmittedLine)
-	p.Legend.Add("Rate Transmitted", rateTransmittedLine)
+	p.Legend.Add("Transmitted", rateTransmittedLine)
 
 	targetBitrateLine, err := plotter.NewLine(t.CCTargetBitrate)
 	if err != nil {
@@ -221,9 +228,9 @@ func (t *Metrics) plotCCBitrate() (template.HTML, error) {
 	}
 	targetBitrateLine.Color = color.RGBA{R: 255, A: 255}
 	p.Add(targetBitrateLine)
-	p.Legend.Add("Target Bitrate", targetBitrateLine)
+	p.Legend.Add("Target", targetBitrateLine)
 
-	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
+	return writePlot(p, width, height)
 }
 
 func (t *Metrics) plotSRTT() (template.HTML, error) {
@@ -240,7 +247,7 @@ func (t *Metrics) plotSRTT() (template.HTML, error) {
 	}
 	p.Add(l1)
 
-	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
+	return writePlot(p, width, height)
 }
 
 func plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (template.HTML, error) {
@@ -270,7 +277,7 @@ func plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (template.HT
 	p.Y.Min = ymin
 	p.Y.Max = ymax
 
-	return writePlot(p, 4*vg.Inch, 2*vg.Inch)
+	return writePlot(p, width, height)
 }
 
 type secondsTicker struct{}
