@@ -172,7 +172,11 @@ type tcConfig struct {
 	Bitrate int      `json:"bitrate"`
 }
 
-func (t tcConfig) apply() error {
+func (t tcConfig) apply(isFirst bool) error {
+	cmd := "change"
+	if isFirst {
+		cmd = "add"
+	}
 	for _, role := range []string{"sender", "receiver"} {
 		tcDelay := exec.Command(
 			"docker",
@@ -181,7 +185,7 @@ func (t tcConfig) apply() error {
 
 			"tc",
 			"qdisc",
-			"add",
+			cmd,
 			"dev", "eth0",
 			"root", "handle", "1:",
 			"netem", "delay", fmt.Sprintf("%vms", t.Delay.Milliseconds()),
@@ -201,7 +205,8 @@ func (t tcConfig) apply() error {
 			role,
 
 			"tc",
-			"qdisc", "add",
+			"qdisc",
+			cmd,
 			"dev", "eth0",
 			"parent", "1:", "handle", "2:",
 			"tbf", "rate", fmt.Sprintf("%v", t.Bitrate), "latency", "400ms", "burst", "20kB",
@@ -233,8 +238,8 @@ func (t *trafficController) run(ctx context.Context) error {
 		return nil
 	}
 
-	for _, p := range t.phases {
-		err := p.Config.apply()
+	for i, p := range t.phases {
+		err := p.Config.apply(i == 0)
 		if err != nil {
 			return err
 		}
