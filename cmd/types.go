@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"image/color"
 	"sort"
 	"strconv"
@@ -175,20 +173,7 @@ type Result struct {
 	Metrics Metrics `json:"metrics"`
 }
 
-func writePlot(p *plot.Plot, w, h font.Length) (template.HTML, error) {
-	writerTo, err := p.WriterTo(w, h, "svg")
-	if err != nil {
-		return "", err
-	}
-	buf := new(bytes.Buffer)
-	_, err = writerTo.WriteTo(buf)
-	if err != nil {
-		return "", err
-	}
-	return template.HTML(buf.String()), nil
-}
-
-func (t *Metrics) plotPerFrameVideoMetric(name string, data plotter.XYs) (template.HTML, error) {
+func (t *Metrics) plotPerFrameVideoMetric(name string, data plotter.XYs) (*plot.Plot, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.Title.Text = fmt.Sprintf("%s per Frame", name)
@@ -197,14 +182,14 @@ func (t *Metrics) plotPerFrameVideoMetric(name string, data plotter.XYs) (templa
 
 	l, err := plotter.NewLine(data)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	p.Add(l)
 
-	return writePlot(p, width, height)
+	return p, nil
 }
 
-func (t *Metrics) plotCCBitrate() (template.HTML, error) {
+func (t *Metrics) plotCCBitrate() (*plot.Plot, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.Title.Text = "CC Target Bitrate"
@@ -216,7 +201,7 @@ func (t *Metrics) plotCCBitrate() (template.HTML, error) {
 
 	rateTransmittedLine, err := plotter.NewLine(t.CCRateTransmitted)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	rateTransmittedLine.Color = color.RGBA{B: 255, A: 255}
 	p.Add(rateTransmittedLine)
@@ -224,16 +209,16 @@ func (t *Metrics) plotCCBitrate() (template.HTML, error) {
 
 	targetBitrateLine, err := plotter.NewLine(t.CCTargetBitrate)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	targetBitrateLine.Color = color.RGBA{R: 255, A: 255}
 	p.Add(targetBitrateLine)
 	p.Legend.Add("Target", targetBitrateLine)
 
-	return writePlot(p, width, height)
+	return p, nil
 }
 
-func (t *Metrics) plotSRTT() (template.HTML, error) {
+func (t *Metrics) plotSRTT() (*plot.Plot, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.Title.Text = "CC RTT"
@@ -243,20 +228,22 @@ func (t *Metrics) plotSRTT() (template.HTML, error) {
 
 	l1, err := plotter.NewLine(t.CCSRTT)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	p.Add(l1)
 
-	return writePlot(p, width, height)
+	return p, nil
 }
 
-func plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (template.HTML, error) {
+func plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (*plot.Plot, error) {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.Title.Text = title
 	p.X.Label.Text = "s"
 	p.Y.Label.Text = "Bytes"
 	p.Legend.Top = false
+	p.Legend.TextStyle.Font = font.From(plot.DefaultFont, 8)
+	p.Legend.ThumbnailWidth = 0.4 * vg.Centimeter
 	p.X.Tick.Marker = ticker
 
 	var l *plotter.Line
@@ -264,10 +251,10 @@ func plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (template.HT
 
 	l, err = plotter.NewLine(data)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	p.Add(l)
-	p.Legend.Add(title, l)
+	//p.Legend.Add(title, l)
 
 	_, _, ymin, ymax := plotter.XYRange(data)
 
@@ -277,7 +264,7 @@ func plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (template.HT
 	p.Y.Min = ymin
 	p.Y.Max = ymax
 
-	return writePlot(p, width, height)
+	return p, nil
 }
 
 type secondsTicker struct{}

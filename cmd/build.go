@@ -1,13 +1,33 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/font"
+)
+
+const (
+	ssimPlotFileName = "%v-%v-ssim.svg"
+	psnrPlotFileName = "%v%v-psnr.svg"
+
+	rtpOutPlotFileName                      = "%v-%v-rtp-out.svg"
+	rtpInPlotFileName                       = "%v-%v-rtp-in.svg"
+	rtcpOutPlotFileName                     = "%v-%v-rtcp-out.svg"
+	rtcpInPlotFileName                      = "%v-%v-rtcp-in.svg"
+	qlogSenderPacketSentsPlotFileName       = "%v-%v-qlog-sender-sent.svg"
+	qlogSenderPacketsReceivedPlotFileName   = "%v-%v-qlog-sender-received.svg"
+	qlogReceiverPacketsSentPlotFileName     = "%v-%v-qlog-receiver-sent.svg"
+	qlogReceiverPacketsReceivedPlotFileName = "%v-%v-qlog-receiver-received.svg"
+	qlogCongestionWindowPlotFileName        = "%v-%v-qlog-cc-window.svg"
+	ccTargetBitratePlotFileName             = "%v-%v-cc-target-bitrate.svg"
+	ccSRTTPlotFileName                      = "%v-%v-cc-srtt.svg"
 )
 
 var (
@@ -46,9 +66,8 @@ func buildHTML(inputFilename, templateDirname, outputDirname string) error {
 	for i, t := range result {
 		for tc, r := range t {
 			detailLink := filepath.Join(i, tc)
-			detailDir := filepath.Join(outputDirname, detailLink)
 			r.Config.DetailsLink = detailLink
-			err := buildResultDetailPage(r.Config, &r.Metrics, detailDir)
+			err := buildResultDetailPage(r.Config, &r.Metrics, outputDirname, detailLink)
 			if err != nil {
 				return err
 			}
@@ -114,143 +133,175 @@ type detailsInput struct {
 	AveragePSNR          float64
 	AverageTargetBitrate float64
 
-	SSIMPlotSVG template.HTML
-	PSNRPlotSVG template.HTML
+	SSIMPlotSVG string
 
-	RTPOutPlotSVG  template.HTML
-	RTPInPlotSVG   template.HTML
-	RTCPOutPlotSVG template.HTML
-	RTCPInPlotSVG  template.HTML
+	PSNRPlotSVG string
 
-	QLOGSenderPacketsSent       template.HTML
-	QLOGSenderPacketsReceived   template.HTML
-	QLOGReceiverPacketsSent     template.HTML
-	QLOGReceiverPacketsReceived template.HTML
+	RTPOutPlotSVG  string
+	RTPInPlotSVG   string
+	RTCPOutPlotSVG string
+	RTCPInPlotSVG  string
 
-	QLOGCongestionWindow template.HTML
+	QLOGSenderPacketsSent       string
+	QLOGSenderPacketsReceived   string
+	QLOGReceiverPacketsSent     string
+	QLOGReceiverPacketsReceived string
 
-	CCTargetBitrate template.HTML
-	CCSRTT          template.HTML
+	QLOGCongestionWindow string
+
+	CCTargetBitrate string
+	CCSRTT          string
 }
 
-func buildResultDetailPage(config Config, input *Metrics, outDir string) error {
-	err := os.MkdirAll(outDir, os.ModePerm)
+func writeToHTML(p *plot.Plot, w, h font.Length) (template.HTML, error) {
+	buf, err := writePlot(p, "svg", w, h)
 	if err != nil {
-		return err
+		return "", err
 	}
+	return template.HTML(buf.String()), nil
+}
 
-	index, err := os.Create(filepath.Join(outDir, "index.html"))
+func writePlot(p *plot.Plot, format string, w, h font.Length) (*bytes.Buffer, error) {
+	writerTo, err := p.WriterTo(w, h, format)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer index.Close()
+	buf := new(bytes.Buffer)
+	_, err = writerTo.WriteTo(buf)
+	if err != nil {
+		return nil, err
+	}
+	return buf, nil
+}
 
+func buildResultDetailPage(config Config, input *Metrics, outDir, link string) error {
 	configJSON, err := json.Marshal(config)
 	if err != nil {
 		return err
 	}
 
-	ssim, err := input.plotPerFrameVideoMetric("SSIM", input.PerFrameSSIM)
-	if err != nil {
-		return err
-	}
-	psnr, err := input.plotPerFrameVideoMetric("PSNR", input.PerFramePSNR)
-	if err != nil {
-		return err
-	}
-
-	rtpOut, err := plotMetric("Sent RTP bytes", plot.DefaultTicks{}, input.SentRTP)
-	if err != nil {
-		return err
-	}
-	rtpIn, err := plotMetric("Received RTP bytes", plot.DefaultTicks{}, input.ReceivedRTP)
-	if err != nil {
-		return err
-	}
-
-	var rtcpOut template.HTML
-	if len(input.SentRTCP) > 0 {
-		rtcpOut, err = plotMetric("Sent RTCP bytes", plot.DefaultTicks{}, input.SentRTCP)
-		if err != nil {
-			return err
-		}
-	}
-
-	var rtcpIn template.HTML
-	if len(input.ReceivedRTCP) > 0 {
-		rtcpIn, err = plotMetric("Received RTCP bytes", plot.DefaultTicks{}, input.ReceivedRTCP)
-		if err != nil {
-			return err
-		}
-	}
-
-	var qsps, qspr, qrps, qrpr, qcc template.HTML
-	if len(input.QLOGSenderPacketsSent) > 0 {
-		qsps, err = plotMetric("QLOG bytes sent", plot.DefaultTicks{}, input.QLOGSenderPacketsSent)
-		if err != nil {
-			return err
-		}
-	}
-	if len(input.QLOGSenderPacketsReceived) > 0 {
-		qspr, err = plotMetric("QLOG bytes received", plot.DefaultTicks{}, input.QLOGSenderPacketsReceived)
-		if err != nil {
-			return err
-		}
-	}
-	if len(input.QLOGReceiverPacketsSent) > 0 {
-		qrps, err = plotMetric("QLOG bytes sent", plot.DefaultTicks{}, input.QLOGReceiverPacketsSent)
-		if err != nil {
-			return err
-		}
-	}
-	if len(input.QLOGReceiverPacketsReceived) > 0 {
-		qrpr, err = plotMetric("QLOG bytes received", plot.DefaultTicks{}, input.QLOGReceiverPacketsReceived)
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(input.QLOGCongestionWindow) > 1 {
-		qcc, err = plotMetric("QLOG Congestion Window", secondsTicker{}, input.QLOGCongestionWindow)
-		if err != nil {
-			return err
-		}
-	}
-
-	var cc template.HTML
-	if len(input.CCTargetBitrate) > 0 {
-		cc, err = input.plotCCBitrate()
-		if err != nil {
-			return err
-		}
-	}
-	var ccrtt template.HTML
-	if len(input.CCSRTT) > 0 {
-		ccrtt, err = input.plotSRTT()
-		if err != nil {
-			return err
-		}
-	}
-
 	details := detailsInput{
 		ConfigJSON: string(configJSON),
 
-		AverageSSIM:                 input.AverageSSIM,
-		AveragePSNR:                 input.AveragePSNR,
-		AverageTargetBitrate:        input.AverageTargetBitrate,
-		SSIMPlotSVG:                 ssim,
-		PSNRPlotSVG:                 psnr,
-		RTPOutPlotSVG:               rtpOut,
-		RTPInPlotSVG:                rtpIn,
-		RTCPOutPlotSVG:              rtcpOut,
-		RTCPInPlotSVG:               rtcpIn,
-		QLOGSenderPacketsSent:       qsps,
-		QLOGSenderPacketsReceived:   qspr,
-		QLOGReceiverPacketsSent:     qrps,
-		QLOGReceiverPacketsReceived: qrpr,
-		QLOGCongestionWindow:        qcc,
-		CCTargetBitrate:             cc,
-		CCSRTT:                      ccrtt,
+		AverageSSIM:          input.AverageSSIM,
+		AveragePSNR:          input.AveragePSNR,
+		AverageTargetBitrate: input.AverageTargetBitrate,
+		SSIMPlotSVG:          fmt.Sprintf(ssimPlotFileName, config.Implementation.Name, config.TestCase.Name),
+		PSNRPlotSVG:          fmt.Sprintf(psnrPlotFileName, config.Implementation.Name, config.TestCase.Name),
+		RTPOutPlotSVG:        fmt.Sprintf(rtpOutPlotFileName, config.Implementation.Name, config.TestCase.Name),
+		RTPInPlotSVG:         fmt.Sprintf(rtpInPlotFileName, config.Implementation.Name, config.TestCase.Name),
+	}
+
+	err = os.MkdirAll(filepath.Join(outDir, link), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	index, err := os.Create(filepath.Join(outDir, link, "index.html"))
+	if err != nil {
+		return err
+	}
+	defer index.Close()
+
+	ssimPlot, err := input.plotPerFrameVideoMetric("SSIM", input.PerFrameSSIM)
+	if err != nil {
+		return err
+	}
+	ssimPlot.Save(width, height, filepath.Join(outDir, link, details.SSIMPlotSVG))
+
+	psnrPlot, err := input.plotPerFrameVideoMetric("PSNR", input.PerFramePSNR)
+	if err != nil {
+		return err
+	}
+	psnrPlot.Save(width, height, filepath.Join(outDir, link, details.PSNRPlotSVG))
+
+	rtpOutPlot, err := plotMetric("Sent RTP bytes", plot.DefaultTicks{}, input.SentRTP)
+	if err != nil {
+		return err
+	}
+	rtpOutPlot.Save(width, height, filepath.Join(outDir, link, details.RTPOutPlotSVG))
+
+	rtpInPlot, err := plotMetric("Received RTP bytes", plot.DefaultTicks{}, input.ReceivedRTP)
+	if err != nil {
+		return err
+	}
+	rtpInPlot.Save(width, height, filepath.Join(outDir, link, details.RTPInPlotSVG))
+
+	if len(input.SentRTCP) > 0 {
+		rtcpOut, err := plotMetric("Sent RTCP bytes", plot.DefaultTicks{}, input.SentRTCP)
+		if err != nil {
+			return err
+		}
+		details.RTCPOutPlotSVG = fmt.Sprintf(rtcpOutPlotFileName, config.Implementation.Name, config.TestCase.Name)
+		rtcpOut.Save(width, height, filepath.Join(outDir, link, details.RTCPOutPlotSVG))
+	}
+
+	if len(input.ReceivedRTCP) > 0 {
+		rtcpInPlot, err := plotMetric("Received RTCP bytes", plot.DefaultTicks{}, input.ReceivedRTCP)
+		if err != nil {
+			return err
+		}
+		details.RTCPInPlotSVG = fmt.Sprintf(rtcpInPlotFileName, config.Implementation.Name, config.TestCase.Name)
+		rtcpInPlot.Save(width, height, filepath.Join(outDir, link, details.RTCPInPlotSVG))
+	}
+
+	if len(input.QLOGSenderPacketsSent) > 0 {
+		qspsPlot, err := plotMetric("QLOG bytes sent", plot.DefaultTicks{}, input.QLOGSenderPacketsSent)
+		if err != nil {
+			return err
+		}
+		details.QLOGSenderPacketsSent = fmt.Sprintf(qlogSenderPacketSentsPlotFileName, config.Implementation.Name, config.TestCase.Name)
+		qspsPlot.Save(width, height, filepath.Join(outDir, link, details.QLOGSenderPacketsSent))
+	}
+	if len(input.QLOGSenderPacketsReceived) > 0 {
+		qsprPlot, err := plotMetric("QLOG bytes received", plot.DefaultTicks{}, input.QLOGSenderPacketsReceived)
+		if err != nil {
+			return err
+		}
+		details.QLOGSenderPacketsReceived = fmt.Sprintf(qlogSenderPacketsReceivedPlotFileName, config.Implementation.Name, config.TestCase.Name)
+		qsprPlot.Save(width, height, filepath.Join(outDir, link, details.QLOGSenderPacketsReceived))
+	}
+	if len(input.QLOGReceiverPacketsSent) > 0 {
+		qrpsPlot, err := plotMetric("QLOG bytes sent", plot.DefaultTicks{}, input.QLOGReceiverPacketsSent)
+		if err != nil {
+			return err
+		}
+		details.QLOGReceiverPacketsSent = fmt.Sprintf(qlogReceiverPacketsSentPlotFileName, config.Implementation.Name, config.TestCase.Name)
+		qrpsPlot.Save(width, height, filepath.Join(outDir, link, details.QLOGReceiverPacketsSent))
+	}
+	if len(input.QLOGReceiverPacketsReceived) > 0 {
+		qrprPlot, err := plotMetric("QLOG bytes received", plot.DefaultTicks{}, input.QLOGReceiverPacketsReceived)
+		if err != nil {
+			return err
+		}
+		details.QLOGReceiverPacketsReceived = fmt.Sprintf(qlogReceiverPacketsReceivedPlotFileName, config.Implementation.Name, config.TestCase.Name)
+		qrprPlot.Save(width, height, filepath.Join(outDir, link, details.QLOGReceiverPacketsReceived))
+	}
+
+	if len(input.QLOGCongestionWindow) > 1 {
+		qccPlot, err := plotMetric("QLOG Congestion Window", secondsTicker{}, input.QLOGCongestionWindow)
+		if err != nil {
+			return err
+		}
+		details.QLOGCongestionWindow = fmt.Sprintf(qlogCongestionWindowPlotFileName, config.Implementation.Name, config.TestCase.Name)
+		qccPlot.Save(width, height, filepath.Join(outDir, link, details.QLOGCongestionWindow))
+	}
+
+	if len(input.CCTargetBitrate) > 0 {
+		ccPlot, err := input.plotCCBitrate()
+		if err != nil {
+			return err
+		}
+		details.CCTargetBitrate = fmt.Sprintf(ccTargetBitratePlotFileName, config.Implementation.Name, config.TestCase.Name)
+		ccPlot.Save(width, height, filepath.Join(outDir, link, details.CCTargetBitrate))
+	}
+	if len(input.CCSRTT) > 0 {
+		ccrttPlot, err := input.plotSRTT()
+		if err != nil {
+			return err
+		}
+		details.CCSRTT = fmt.Sprintf(ccSRTTPlotFileName, config.Implementation.Name, config.TestCase.Name)
+		ccrttPlot.Save(width, height, filepath.Join(outDir, link, details.CCSRTT))
 	}
 
 	return templates.ExecuteTemplate(index, "detail.html", details)

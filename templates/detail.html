@@ -29,11 +29,11 @@
   </div>
   <div class="row justify-content-md-center">
     <div class="col-sm-auto">
-      {{ .SSIMPlotSVG }}
+      <img src="{{ .SSIMPlotSVG }}" alt="SSIM plot" />
     </div>
 
     <div class="col-sm-auto">
-      {{ .PSNRPlotSVG }}
+      <img src="{{ .PSNRPlotSVG }}" alt="PSNR plot" />
     </div>
   </div>
 
@@ -51,12 +51,12 @@
 
   <div class="row justify-content-md-center">
     <div class="col-sm-auto">
-      {{ .RTPOutPlotSVG }}
+      <img src="{{ .RTPOutPlotSVG }}" alt="RTP Output plot" />
     </div>
 
     {{ if .RTCPInPlotSVG }}
       <div class="col-sm-auto">
-        {{ .RTCPInPlotSVG }}
+        <img src="{{ .RTCPInPlotSVG }}" alt="RTCP Input plot" />
       </div>
     {{ end }}
   </div>
@@ -64,13 +64,13 @@
   {{ if .QLOGSenderPacketsSent }}
     <div class="row justify-content-md-center">
       <div class="col-sm-auto">
-        {{ .QLOGSenderPacketsSent }}
+        <img src="{{ .QLOGSenderPacketsSent }}" alt="QLOG packets sent by sender plot" />
       </div>
       <div class="col-sm-auto">
-        {{ .QLOGSenderPacketsReceived }}
+        <img src="{{ .QLOGSenderPacketsReceived }}" alt="QLOG packets received by sender plot" />
       </div>
       <div class="col-sm-auto">
-        {{ .QLOGCongestionWindow }}
+        <img src="{{ .QLOGCongestionWindow }}" alt="QLOG congestion window plot" />
       </div>
     </div>
   {{ end }}
@@ -78,12 +78,12 @@
   <div class="row justify-content-md-center">
     {{ if .CCTargetBitrate }}
       <div class="col-sm-auto">
-        {{ .CCTargetBitrate }}
+        <img src="{{ .CCTargetBitrate }}" alt="Real-time congestion control target bitrate plot" />
       </div>
     {{ end }}
     {{ if .CCSRTT }}
       <div class="col-sm-auto">
-        {{ .CCSRTT }}
+        <img src="{{ .CCSRTT }}" alt="Real-time congestion control RTT plot" />
       </div>
     {{ end }}
   </div>
@@ -96,21 +96,21 @@
 
   <div class="row justify-content-md-center">
     <div class="col-sm-auto">
-      {{ .RTPInPlotSVG }}
+      <img src="{{ .RTPInPlotSVG }}" alt="RTP input plot" />
     </div>
 
     <div class="col-sm-auto">
-      {{ .RTCPOutPlotSVG }}
+      <img src="{{ .RTCPOutPlotSVG }}" alt="RTCP output plot" />
     </div>
   </div>
 
   {{ if .QLOGReceiverPacketsReceived }}
     <div class="row justify-content-md-center">
       <div class="col-sm-auto">
-        {{ .QLOGReceiverPacketsReceived }}
+        <img src="{{ .QLOGReceiverPacketsReceived }}" alt="QLOG packets received by receiver plot" />
       </div>
       <div class="col-sm-auto">
-        {{ .QLOGReceiverPacketsSent }}
+        <img src="{{ .QLOGReceiverPacketsSent }}" alt="QLOG packets sent by receiver plot" />
       </div>
     </div>
   {{ end }}
