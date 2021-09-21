@@ -6,7 +6,7 @@
     },
     "phases": [
       {
-	"duration": "30s",
+	"duration": "60s",
 	"config": {
 	  "delay": "1ms",
 	  "bitrate": 1000000
@@ -35,7 +35,7 @@
     },
     "phases": [
       {
-	"duration": "30s",
+	"duration": "60s",
 	"config": {
 	  "delay": "50ms",
 	  "bitrate": 1000000
@@ -64,7 +64,7 @@
     },
     "phases": [
       {
-	"duration": "30s",
+	"duration": "60s",
 	"config": {
 	  "delay": "150ms",
 	  "bitrate": 1000000
@@ -93,7 +93,7 @@
     },
     "phases": [
       {
-	"duration": "30s",
+	"duration": "60s",
 	"config": {
 	  "delay": "300ms",
 	  "bitrate": 1000000
