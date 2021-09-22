@@ -13,7 +13,8 @@
   "rtq-go-nocc": {
     "sender": {
       "image": "engelbart/rtq-go-endpoint:v0.0.16-nocc",
-      "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.16"
+      "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.16",
+      "params": "-cc naive"
     },
     "receiver": {
       "image": "engelbart/rtq-go-endpoint:v0.0.16-nocc",
@@ -82,7 +83,7 @@
     "sender": {
       "image": "engelbart/rtq-go-endpoint:v0.0.16-nocc",
       "url": "https://github.com/mengelbart/rtq-go-endpoint/tree/v0.0.16",
-      "params": "-stream"
+      "params": "-cc naive -stream"
     },
     "receiver": {
       "image": "engelbart/rtq-go-endpoint:v0.0.16-nocc",
