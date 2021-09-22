@@ -93,6 +93,8 @@ type Metrics struct {
 	PerFrameSSIM plotter.XYs `json:"per_frame_ssim"`
 	PerFramePSNR plotter.XYs `json:"per_frame_psnr"`
 
+	LinkCapacity plotter.XYs `json:"link_capacity"`
+
 	SentRTP  plotter.XYs `json:"sent_rtp"`
 	SentRTCP plotter.XYs `json:"sent_rtcp"`
 
@@ -199,13 +201,15 @@ func (t *Metrics) plotCCBitrate() (*plot.Plot, error) {
 	p.Legend.TextStyle.Font = font.From(plot.DefaultFont, 8)
 	p.Legend.ThumbnailWidth = 0.4 * vg.Centimeter
 
-	rateTransmittedLine, err := plotter.NewLine(t.CCRateTransmitted)
-	if err != nil {
-		return nil, err
+	if t.CCRateTransmitted != nil {
+		rateTransmittedLine, err := plotter.NewLine(t.CCRateTransmitted)
+		if err != nil {
+			return nil, err
+		}
+		rateTransmittedLine.Color = color.RGBA{B: 255, A: 255}
+		p.Add(rateTransmittedLine)
+		p.Legend.Add("Transmitted", rateTransmittedLine)
 	}
-	rateTransmittedLine.Color = color.RGBA{B: 255, A: 255}
-	p.Add(rateTransmittedLine)
-	p.Legend.Add("Transmitted", rateTransmittedLine)
 
 	targetBitrateLine, err := plotter.NewLine(t.CCTargetBitrate)
 	if err != nil {
@@ -214,6 +218,13 @@ func (t *Metrics) plotCCBitrate() (*plot.Plot, error) {
 	targetBitrateLine.Color = color.RGBA{R: 255, A: 255}
 	p.Add(targetBitrateLine)
 	p.Legend.Add("Target", targetBitrateLine)
+
+	capacityLine, err := plotter.NewLine(t.LinkCapacity)
+	if err != nil {
+		return nil, err
+	}
+	p.Add(capacityLine)
+	p.Legend.Add("Link Capacity", capacityLine)
 
 	return p, nil
 }

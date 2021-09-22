@@ -30,7 +30,7 @@ const (
 	receiverRTCPOutLogFile = "receiver_logs/rtp/rtcp_out.log"
 	receiverQLOGFileGLOB   = "receiver_logs/qlog/*.qlog"
 	senderQLOGFileGLOB     = "sender_logs/qlog/*.qlog"
-	senderLogCCFile        = "sender_logs/cc.log"
+	senderCCLogFile        = "sender_logs/cc.log"
 )
 
 var (
@@ -195,9 +195,9 @@ func eval(outFilename string) error {
 		result.Metrics.QLOGReceiverPacketsReceived = binToSeconds(qlogReceiverPacketsReceived)
 	}
 
-	if _, err = os.Stat(senderLogCCFile); err == nil {
+	if _, err = os.Stat(senderCCLogFile); err == nil {
 		g := csvValueGetter{timeColumn: 0, valueColumn: 1}
-		ccTargetBitrateTable, err := getXYsFromCSV("sender_logs/cc.log", ',', g.get)
+		ccTargetBitrateTable, err := getXYsFromCSV(senderCCLogFile, ',', g.get)
 		if err != nil {
 			return err
 		}
@@ -205,11 +205,15 @@ func eval(outFilename string) error {
 		result.Metrics.AverageTargetBitrate = math.Round(averageMapValues(ccTargetBitrateTable)*100) / 100
 
 		g = csvValueGetter{timeColumn: 0, valueColumn: 13}
-		ccRateTransmitted, err := getXYsFromCSV("sender_logs/cc.log", ',', g.get)
-		if err != nil {
-			return err
+		if ccRateTransmitted, err := getXYsFromCSV(senderCCLogFile, ',', g.get); err != nil {
+			log.Printf("failed to CC rate transmitted: %v\n", err)
+		} else {
+			result.Metrics.CCRateTransmitted = ccRateTransmitted
 		}
-		result.Metrics.CCRateTransmitted = ccRateTransmitted
+
+		maxX := ccTargetBitrateTable[len(ccTargetBitrateTable)-1].X
+		linkCapacity := getCapacityFromConfig(result.Config, maxX)
+		result.Metrics.LinkCapacity = rect(linkCapacity)
 
 		g = csvValueGetter{timeColumn: 0, valueColumn: 5}
 		ccSRTT, err := getXYsFromCSV("sender_logs/cc.log", ',', g.get)
@@ -219,12 +223,31 @@ func eval(outFilename string) error {
 		result.Metrics.CCSRTT = ccSRTT
 
 	} else if os.IsNotExist(err) {
-		fmt.Printf("%v not found: %v\n", senderLogCCFile, err)
+		fmt.Printf("%v not found: %v\n", senderCCLogFile, err)
 	} else {
-		return fmt.Errorf("failed to stat %v: %w", senderLogCCFile, err)
+		return fmt.Errorf("failed to stat %v: %w", senderCCLogFile, err)
 	}
 
 	return saveToJSONFile(outFilename, result)
+}
+
+func getCapacityFromConfig(c Config, maxX float64) plotter.XYs {
+	var result plotter.XYs
+	x := float64(0)
+	var lastPhase tcPhase
+	for _, phase := range c.TestCase.Phases {
+		result = append(result, plotter.XY{
+			X: x,
+			Y: float64(phase.Config.Bitrate) / 1000.0,
+		})
+		x += float64(phase.Duration.Milliseconds())
+		lastPhase = phase
+	}
+	result = append(result, plotter.XY{
+		X: maxX,
+		Y: float64(lastPhase.Config.Bitrate) / 1000.0,
+	})
+	return result
 }
 
 const (
@@ -273,6 +296,12 @@ type csvValueGetter struct {
 }
 
 func (g *csvValueGetter) get(i int, row []string) (plotter.XY, error) {
+	if g.timeColumn > len(row)-1 {
+		return plotter.XY{}, fmt.Errorf("timeColumn: index out of range [%v] with length %v", g.timeColumn, len(row))
+	}
+	if g.valueColumn > len(row)-1 {
+		return plotter.XY{}, fmt.Errorf("valueColumn: index out of range [%v] with length %v", g.valueColumn, len(row))
+	}
 	k, err := strconv.ParseInt(row[g.timeColumn], 10, 64)
 	if err != nil {
 		return plotter.XY{}, err
