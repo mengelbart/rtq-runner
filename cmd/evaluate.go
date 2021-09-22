@@ -211,10 +211,6 @@ func eval(outFilename string) error {
 			result.Metrics.CCRateTransmitted = ccRateTransmitted
 		}
 
-		maxX := ccTargetBitrateTable[len(ccTargetBitrateTable)-1].X
-		linkCapacity := getCapacityFromConfig(result.Config, maxX)
-		result.Metrics.LinkCapacity = rect(linkCapacity)
-
 		g = csvValueGetter{timeColumn: 0, valueColumn: 5}
 		ccSRTT, err := getXYsFromCSV("sender_logs/cc.log", ',', g.get)
 		if err != nil {

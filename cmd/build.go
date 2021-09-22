@@ -288,6 +288,9 @@ func buildResultDetailPage(config Config, input *Metrics, outDir, link string) e
 	}
 
 	if len(input.CCTargetBitrate) > 0 {
+		maxX := input.CCTargetBitrate[len(input.CCTargetBitrate)-1].X
+		linkCapacity := getCapacityFromConfig(config, maxX)
+		input.LinkCapacity = rect(linkCapacity)
 		ccPlot, err := input.plotCCBitrate()
 		if err != nil {
 			return err

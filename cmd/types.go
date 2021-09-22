@@ -198,8 +198,9 @@ func (t *Metrics) plotCCBitrate() (*plot.Plot, error) {
 	p.X.Label.Text = "s"
 	p.Y.Label.Text = "kbit/s"
 	p.X.Tick.Marker = secondsTicker{}
-	p.Legend.TextStyle.Font = font.From(plot.DefaultFont, 8)
+	p.Legend.TextStyle.Font = font.From(plot.DefaultFont, 6)
 	p.Legend.ThumbnailWidth = 0.4 * vg.Centimeter
+	p.Legend.YOffs = -0.25 * vg.Centimeter
 
 	if t.CCRateTransmitted != nil {
 		rateTransmittedLine, err := plotter.NewLine(t.CCRateTransmitted)
@@ -225,6 +226,8 @@ func (t *Metrics) plotCCBitrate() (*plot.Plot, error) {
 	}
 	p.Add(capacityLine)
 	p.Legend.Add("Link Capacity", capacityLine)
+
+	//p.Y.Max = 1400 // TODO: Hack to set height for paper output, remove for later experiments
 
 	return p, nil
 }
