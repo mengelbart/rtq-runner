@@ -25,7 +25,7 @@ func init() {
 	runCmd.Flags().Int64VarP(&runDate, "date", "d", time.Now().Unix(), "Unix Timestamp in seconds since epoch")
 	runCmd.Flags().StringVarP(&implementation, "implementation", "i", "rtq-go-scream", "implementation from implementation.json to use")
 	runCmd.Flags().StringVarP(&testcase, "testcase", "c", "simple-p2p-1", "test case to run")
-	runCmd.Flags().DurationVarP(&timeout, "timeout", "t", 10*time.Minute, "max time to wait before cancelling the test run")
+	runCmd.Flags().DurationVarP(&timeout, "timeout", "t", 4*time.Minute, "max time to wait before cancelling the test run")
 
 	rootCmd.AddCommand(runCmd)
 }
