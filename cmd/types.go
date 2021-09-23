@@ -197,7 +197,7 @@ func (t *Metrics) plotCCBitrate() (*plot.Plot, error) {
 	p.Title.Text = "CC Target Bitrate"
 	p.X.Label.Text = "s"
 	p.Y.Label.Text = "kbit/s"
-	p.X.Tick.Marker = secondsTicker{}
+	p.X.Tick.Marker = fixedSecondsTicker{seconds: []int{0, 60, 120}}
 	p.Legend.TextStyle.Font = font.From(plot.DefaultFont, 6)
 	p.Legend.ThumbnailWidth = 0.4 * vg.Centimeter
 	p.Legend.YOffs = -0.25 * vg.Centimeter
@@ -227,7 +227,7 @@ func (t *Metrics) plotCCBitrate() (*plot.Plot, error) {
 	p.Add(capacityLine)
 	p.Legend.Add("Link Capacity", capacityLine)
 
-	//p.Y.Max = 1400 // TODO: Hack to set height for paper output, remove for later experiments
+	p.Y.Max = 1400 // TODO: Hack to set height for paper output, remove for later experiments
 
 	return p, nil
 }
@@ -281,6 +281,21 @@ func plotMetric(title string, ticker plot.Ticker, data plotter.XYs) (*plot.Plot,
 	return p, nil
 }
 
+type fixedSecondsTicker struct {
+	seconds []int
+}
+
+func (f fixedSecondsTicker) Ticks(min, max float64) []plot.Tick {
+	var result []plot.Tick
+	for _, s := range f.seconds {
+		result = append(result, plot.Tick{
+			Value: float64(1000 * s),
+			Label: fmt.Sprintf("%v", s),
+		})
+	}
+	return result
+}
+
 type secondsTicker struct{}
 
 func (secondsTicker) Ticks(min, max float64) []plot.Tick {
@@ -296,5 +311,4 @@ func (secondsTicker) Ticks(min, max float64) []plot.Tick {
 		tks[i].Label = fmt.Sprintf("%.2f", l/1000.0)
 	}
 	return tks
-
 }
