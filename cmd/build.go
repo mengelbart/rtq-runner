@@ -15,7 +15,7 @@ import (
 
 const (
 	ssimPlotFileName = "%v-%v-ssim.svg"
-	psnrPlotFileName = "%v%v-psnr.svg"
+	psnrPlotFileName = "%v-%v-psnr.svg"
 
 	rtpOutPlotFileName                      = "%v-%v-rtp-out.svg"
 	rtpInPlotFileName                       = "%v-%v-rtp-in.svg"
