@@ -48,13 +48,13 @@ var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return buildHTML(resultsFilename, templateDir, outputDir)
+		return buildHTML(resultsFilename, outputDir)
 	},
 }
 
 var templates *template.Template
 
-func buildHTML(inputFilename, templateDirname, outputDirname string) error {
+func buildHTML(inputFilename, outputDirname string) error {
 	var result AggregatedResults
 	err := parseJSONFile(inputFilename, &result)
 	if err != nil {
@@ -228,12 +228,12 @@ func buildResultDetailPage(config Config, input *Metrics, outDir, link string) e
 	rtpInPlot.Save(width, height, filepath.Join(outDir, link, details.RTPInPlotSVG))
 
 	if len(input.SentRTCP) > 0 {
-		rtcpOut, err := plotMetric("Sent RTCP bytes", plot.DefaultTicks{}, input.SentRTCP)
+		rtcpOutPlot, err := plotMetric("Sent RTCP bytes", plot.DefaultTicks{}, input.SentRTCP)
 		if err != nil {
 			return err
 		}
 		details.RTCPOutPlotSVG = fmt.Sprintf(rtcpOutPlotFileName, config.Implementation.Name, config.TestCase.Name)
-		rtcpOut.Save(width, height, filepath.Join(outDir, link, details.RTCPOutPlotSVG))
+		rtcpOutPlot.Save(width, height, filepath.Join(outDir, link, details.RTCPOutPlotSVG))
 	}
 
 	if len(input.ReceivedRTCP) > 0 {

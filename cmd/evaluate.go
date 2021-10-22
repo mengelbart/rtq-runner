@@ -66,7 +66,7 @@ func eval(outFilename string) error {
 		log.Printf("failed to calculate video metrics: %v\n", err)
 	}
 
-	if _, err := os.Stat(ssimLogFile); err == nil {
+	if _, err = os.Stat(ssimLogFile); err == nil {
 		result.Metrics.PerFrameSSIM, err = getXYsFromCSV(ssimLogFile, ' ', ssimValueGetter)
 		if err != nil {
 			return fmt.Errorf("failed to get ssim metrics table: %w", err)
@@ -78,7 +78,7 @@ func eval(outFilename string) error {
 		return fmt.Errorf("failed to stat %v: %w", ssimLogFile, err)
 	}
 
-	if _, err := os.Stat(psnrLogFile); err == nil {
+	if _, err = os.Stat(psnrLogFile); err == nil {
 		result.Metrics.PerFramePSNR, err = getXYsFromCSV(psnrLogFile, ' ', psnrValueGetter)
 		if err != nil {
 			return fmt.Errorf("failed to get psnr metrics table: %w", err)
@@ -90,10 +90,10 @@ func eval(outFilename string) error {
 		return fmt.Errorf("failed to stat %v: %w", psnrLogFile, err)
 	}
 
-	if _, err := os.Stat(senderRTPOutLogFile); err == nil {
+	if _, err = os.Stat(senderRTPOutLogFile); err == nil {
 		g := csvValueGetter{timeColumn: 2, valueColumn: 8}
-		sentRTPTable, err := getXYsFromCSV(senderRTPOutLogFile, '\t', g.get)
-		if err != nil {
+		var sentRTPTable plotter.XYs
+		if sentRTPTable, err = getXYsFromCSV(senderRTPOutLogFile, '\t', g.get); err != nil {
 			return fmt.Errorf("failed to get rtp out metrics table: %w", err)
 		}
 		result.Metrics.SentRTP = binToSeconds(sentRTPTable)
@@ -103,10 +103,10 @@ func eval(outFilename string) error {
 		return fmt.Errorf("failed to stat %v: %w", senderRTPOutLogFile, err)
 	}
 
-	if _, err := os.Stat(receiverRTPInLogFile); err == nil {
+	if _, err = os.Stat(receiverRTPInLogFile); err == nil {
 		g := csvValueGetter{timeColumn: 2, valueColumn: 8}
-		receivedRTPTable, err := getXYsFromCSV(receiverRTPInLogFile, '\t', g.get)
-		if err != nil {
+		var receivedRTPTable plotter.XYs
+		if receivedRTPTable, err = getXYsFromCSV(receiverRTPInLogFile, '\t', g.get); err != nil {
 			return fmt.Errorf("failed to get rtp in metrics table: %w", err)
 		}
 		result.Metrics.ReceivedRTP = binToSeconds(receivedRTPTable)
@@ -116,10 +116,10 @@ func eval(outFilename string) error {
 		return fmt.Errorf("failed to stat %v: %w", receiverRTPInLogFile, err)
 	}
 
-	if _, err := os.Stat(receiverRTCPOutLogFile); err == nil {
+	if _, err = os.Stat(receiverRTCPOutLogFile); err == nil {
 		g := csvValueGetter{timeColumn: 2, valueColumn: 3}
-		sentRTCPTable, err := getXYsFromCSV(receiverRTCPOutLogFile, '\t', g.get)
-		if err != nil {
+		var sentRTCPTable plotter.XYs
+		if sentRTCPTable, err = getXYsFromCSV(receiverRTCPOutLogFile, '\t', g.get); err != nil {
 			return err
 		}
 		result.Metrics.SentRTCP = binToSeconds(sentRTCPTable)
@@ -129,10 +129,10 @@ func eval(outFilename string) error {
 		return fmt.Errorf("failed to stat %v: %w", receiverRTCPOutLogFile, err)
 	}
 
-	if _, err := os.Stat(senderRTCPInLogFile); err == nil {
+	if _, err = os.Stat(senderRTCPInLogFile); err == nil {
 		g := csvValueGetter{timeColumn: 2, valueColumn: 3}
-		receivedRTCPTable, err := getXYsFromCSV(senderRTCPInLogFile, '\t', g.get)
-		if err != nil {
+		var receivedRTCPTable plotter.XYs
+		if receivedRTCPTable, err = getXYsFromCSV(senderRTCPInLogFile, '\t', g.get); err != nil {
 			return err
 		}
 		result.Metrics.ReceivedRTCP = binToSeconds(receivedRTCPTable)
@@ -151,22 +151,22 @@ func eval(outFilename string) error {
 			return fmt.Errorf("found invalid number of qlog files: %v", len(files))
 		}
 		q := qlogDataGetter{path: files[0], metric: qlogPacketSentEventName}
-		qlogSenderPacketsSent, err := q.get()
-		if err != nil {
+		var qlogSenderPacketsSent plotter.XYs
+		if qlogSenderPacketsSent, err = q.get(); err != nil {
 			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
 		}
 		result.Metrics.QLOGSenderPacketsSent = binToSeconds(qlogSenderPacketsSent)
 
 		q = qlogDataGetter{path: files[0], metric: qlogPacketReceivedEventName}
-		qlogSenderPacketsReceived, err := q.get()
-		if err != nil {
+		var qlogSenderPacketsReceived plotter.XYs
+		if qlogSenderPacketsReceived, err = q.get(); err != nil {
 			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
 		}
 		result.Metrics.QLOGSenderPacketsReceived = binToSeconds(qlogSenderPacketsReceived)
 
 		q = qlogDataGetter{path: files[0], metric: qlogMetricsUpdatedEventName}
-		qlogCongestionWindow, err := q.get()
-		if err != nil {
+		var qlogCongestionWindow plotter.XYs
+		if qlogCongestionWindow, err = q.get(); err != nil {
 			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
 		}
 		result.Metrics.QLOGCongestionWindow = rect(qlogCongestionWindow)
@@ -181,15 +181,15 @@ func eval(outFilename string) error {
 			return fmt.Errorf("found invalid number of qlog files: %v", len(files))
 		}
 		q := qlogDataGetter{path: files[0], metric: qlogPacketSentEventName}
-		qlogReceiverPacketsSent, err := q.get()
-		if err != nil {
+		var qlogReceiverPacketsSent plotter.XYs
+		if qlogReceiverPacketsSent, err = q.get(); err != nil {
 			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
 		}
 		result.Metrics.QLOGReceiverPacketsSent = binToSeconds(qlogReceiverPacketsSent)
 
 		q = qlogDataGetter{path: files[0], metric: qlogPacketReceivedEventName}
-		qlogReceiverPacketsReceived, err := q.get()
-		if err != nil {
+		var qlogReceiverPacketsReceived plotter.XYs
+		if qlogReceiverPacketsReceived, err = q.get(); err != nil {
 			return fmt.Errorf("failed to read QLOG File %v: %w", files[0], err)
 		}
 		result.Metrics.QLOGReceiverPacketsReceived = binToSeconds(qlogReceiverPacketsReceived)
@@ -197,23 +197,24 @@ func eval(outFilename string) error {
 
 	if _, err = os.Stat(senderCCLogFile); err == nil {
 		g := csvValueGetter{timeColumn: 0, valueColumn: 1}
-		ccTargetBitrateTable, err := getXYsFromCSV(senderCCLogFile, ',', g.get)
-		if err != nil {
+		var ccTargetBitrateTable plotter.XYs
+		if ccTargetBitrateTable, err = getXYsFromCSV(senderCCLogFile, ',', g.get); err != nil {
 			return err
 		}
 		result.Metrics.CCTargetBitrate = ccTargetBitrateTable
 		result.Metrics.AverageTargetBitrate = math.Round(averageMapValues(ccTargetBitrateTable)*100) / 100
 
 		g = csvValueGetter{timeColumn: 0, valueColumn: 13}
-		if ccRateTransmitted, err := getXYsFromCSV(senderCCLogFile, ',', g.get); err != nil {
+		var ccRateTransmitted plotter.XYs
+		if ccRateTransmitted, err = getXYsFromCSV(senderCCLogFile, ',', g.get); err != nil {
 			log.Printf("failed to CC rate transmitted: %v\n", err)
 		} else {
 			result.Metrics.CCRateTransmitted = ccRateTransmitted
 		}
 
 		g = csvValueGetter{timeColumn: 0, valueColumn: 5}
-		ccSRTT, err := getXYsFromCSV("sender_logs/cc.log", ',', g.get)
-		if err != nil {
+		var ccSRTT plotter.XYs
+		if ccSRTT, err = getXYsFromCSV("sender_logs/cc.log", ',', g.get); err != nil {
 			return err
 		}
 		result.Metrics.CCSRTT = ccSRTT
@@ -436,7 +437,7 @@ func (q *qlogDataGetter) get() (plotter.XYs, error) {
 	for scanner.Scan() {
 		b := scanner.Bytes()
 		x := map[string]interface{}{}
-		if err := json.Unmarshal(b, &x); err == nil {
+		if err = json.Unmarshal(b, &x); err == nil {
 			bs = append(bs, append(b, []byte("\n")...)...)
 		}
 	}
@@ -486,11 +487,11 @@ func qlogPacketReceivedGetter(r qlog.EventWrapper) (plotter.XY, error) {
 }
 
 func qlogCongestionWindowGetter(r qlog.EventWrapper) (plotter.XY, error) {
-	if r.Data.MetricsUpdated.CongestionWindow <= 0 {
+	if r.Data.CongestionWindow <= 0 {
 		return plotter.XY{}, fmt.Errorf("value not given")
 	}
 	return plotter.XY{
 		X: r.RelativeTime,
-		Y: float64(r.Data.MetricsUpdated.CongestionWindow),
+		Y: float64(r.Data.CongestionWindow),
 	}, nil
 }
