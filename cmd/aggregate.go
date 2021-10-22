@@ -26,16 +26,15 @@ func init() {
 var aggregateCmd = &cobra.Command{
 	Use:   "aggregate",
 	Short: "aggregate results",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		parsedDate := time.Unix(aggregationDate, 0)
-		return aggregate(aggregateInputDirname, aggregateOutputFilename, parsedDate)
+	RunE: func(*cobra.Command, []string) error {
+		return aggregate(aggregateInputDirname, aggregateOutputFilename)
 	},
 }
 
-func aggregate(inputDirname, outputFilename string, date time.Time) error {
+func aggregate(inputDirname, outputFilename string) error {
 	aggregated := make(map[string]map[string]Result)
 
-	err := filepath.Walk(inputDirname, func(path string, info fs.FileInfo, err error) error {
+	err := filepath.Walk(inputDirname, func(path string, info fs.FileInfo, _ error) error {
 		if !info.IsDir() {
 			var result Result
 			err := parseJSONFile(path, &result)

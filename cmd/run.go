@@ -33,7 +33,7 @@ func init() {
 var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Execute tests",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(*cobra.Command, []string) error {
 		var is Implementations
 		err := parseJSONFile("implementations.json", &is)
 		if err != nil {
@@ -115,8 +115,8 @@ func run(c *Config) error {
 		done := false
 		start := time.Now()
 		for !done {
-			containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
-			if err != nil {
+			var containers []types.Container
+			if containers, err = cli.ContainerList(context.Background(), types.ContainerListOptions{}); err != nil {
 				log.Printf("failed to get container list: %v\n", err)
 			}
 			for _, container := range containers {
