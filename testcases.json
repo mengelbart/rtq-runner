@@ -28,57 +28,6 @@
       }
     ]
   },
-  "simple-p2p-drop-1-b": {
-    "videofile": {
-      "url": "https://storage.googleapis.com/inputvideos.mathis.dev/sintel_trailer.mkv",
-      "name": "sintel4m.y4m"
-    },
-    "phases": [
-      {
-	"duration": "30s",
-	"config": {
-	  "delay": "1ms",
-	  "bitrate": 1000000
-	}
-      },
-      {
-	"duration": "30s",
-	"config": {
-	  "delay": "1ms",
-	  "bitrate": 500000
-	}
-      },
-      {
-	"duration": "0",
-	"config": {
-	  "delay": "1ms",
-	  "bitrate": 500000
-	}
-      }
-    ]
-  },
-  "simple-p2p-drop-1-c": {
-    "videofile": {
-      "url": "https://storage.googleapis.com/inputvideos.mathis.dev/sintel_trailer.mkv",
-      "name": "sintel4m.y4m"
-    },
-    "phases": [
-      {
-	"duration": "30s",
-	"config": {
-	  "delay": "1ms",
-	  "bitrate": 1000000
-	}
-      },
-      {
-	"duration": "0",
-	"config": {
-	  "delay": "1ms",
-	  "bitrate": 500000
-	}
-      }
-    ]
-  },
   "simple-p2p-drop-2": {
     "videofile": {
       "url": "https://storage.googleapis.com/inputvideos.mathis.dev/sintel_trailer.mkv",
