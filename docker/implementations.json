@@ -1,0 +1,39 @@
+{
+  "pion-gcc": {
+    "name": "pion-gcc",
+    "sender": {
+      "href": "",
+      "image": "engelbart/bwe-test-pion"
+    },
+    "receiver": {
+      "href": "",
+      "image": "engelbart/bwe-test-pion"
+    }
+  },
+  "rtp-over-quic-gcc": {
+    "name": "rtp-over-quic",
+    "sender": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic:prio",
+      "args": "--cc-dump /log/cc.log --rtcp-dump /log/rtcp_in.log --rtp-dump /log/rtp_out.log -g -c h264 --source /input/input.y4m"
+    },
+    "receiver": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic:prio",
+      "args": "--rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log -t -c h264 --sink /output/output.mkv"
+    }
+  },
+  "rtp-over-quic-scream": {
+    "name": "rtp-over-quic",
+    "sender": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic:prio",
+      "args": "--cc-dump /log/cc.log --rtcp-dump /log/rtcp_in.log --rtp-dump /log/rtp_out.log --qlog /log -s -c h264 --source /input/input.y4m --stream"
+    },
+    "receiver": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic:prio",
+      "args": "--rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log --qlog /log -r -c h264 --sink /output/output.mkv"
+    }
+  }
+}

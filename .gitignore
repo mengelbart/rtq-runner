@@ -1,0 +1,9 @@
+output/
+input/
+logs/
+send_log/
+receive_log/
+html/
+*.json
+*.csv
+*.log
