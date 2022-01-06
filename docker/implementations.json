@@ -14,26 +14,26 @@
     "name": "rtp-over-quic",
     "sender": {
       "href": "",
-      "image": "engelbart/rtp-over-quic:prio",
-      "args": "--cc-dump /log/cc.log --rtcp-dump /log/rtcp_in.log --rtp-dump /log/rtp_out.log -g -c h264 --source /input/input.y4m"
+      "image": "engelbart/rtp-over-quic",
+      "args": "--cc-dump /log/gcc.log --rtcp-dump /log/rtcp_in.log --rtp-dump /log/rtp_out.log --qlog /log --gcc --codec h264 --source /input/input.y4m"
     },
     "receiver": {
       "href": "",
-      "image": "engelbart/rtp-over-quic:prio",
-      "args": "--rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log -t -c h264 --sink /output/output.mkv"
+      "image": "engelbart/rtp-over-quic",
+      "args": "--rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log --qlog /log --twcc --codec h264 --sink /output/output.mkv"
     }
   },
   "rtp-over-quic-scream": {
     "name": "rtp-over-quic",
     "sender": {
       "href": "",
-      "image": "engelbart/rtp-over-quic:prio",
-      "args": "--cc-dump /log/cc.log --rtcp-dump /log/rtcp_in.log --rtp-dump /log/rtp_out.log --qlog /log -s -c h264 --source /input/input.y4m --stream"
+      "image": "engelbart/rtp-over-quic",
+      "args": "--cc-dump /log/scream.log --rtcp-dump /log/rtcp_in.log --rtp-dump /log/rtp_out.log --qlog /log --scream --codec h264 --source /input/input.y4m"
     },
     "receiver": {
       "href": "",
-      "image": "engelbart/rtp-over-quic:prio",
-      "args": "--rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log --qlog /log -r -c h264 --sink /output/output.mkv"
+      "image": "engelbart/rtp-over-quic",
+      "args": "--rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log --qlog /log --rfc8888 --codec h264 --sink /output/output.mkv"
     }
   }
 }
