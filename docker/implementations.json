@@ -10,6 +10,32 @@
       "image": "engelbart/bwe-test-pion"
     }
   },
+  "rtp-over-quic-udp-gcc": {
+    "name": "rtp-over-quic",
+    "sender": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic",
+      "args": "--transport udp --cc-dump /log/gcc.log --rtcp-dump /log/rtcp_in.log --rtp-dump /log/rtp_out.log --qlog /log --gcc --codec h264 --source /input/input.y4m"
+    },
+    "receiver": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic",
+      "args": "--transport udp --rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log --qlog /log --twcc --codec h264 --sink /output/output.mkv"
+    }
+  },
+  "rtp-over-quic-udp-scream": {
+    "name": "rtp-over-quic",
+    "sender": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic",
+      "args": "--transport udp --cc-dump /log/scream.log --rtcp-dump /log/rtcp_in.log --rtp-dump /log/rtp_out.log --qlog /log --scream --codec h264 --source /input/input.y4m"
+    },
+    "receiver": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic",
+      "args": "--transport udp --rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log --qlog /log --rfc8888 --codec h264 --sink /output/output.mkv"
+    }
+  },
   "rtp-over-quic-gcc": {
     "name": "rtp-over-quic",
     "sender": {
@@ -34,6 +60,45 @@
       "href": "",
       "image": "engelbart/rtp-over-quic",
       "args": "--rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log --qlog /log --rfc8888 --codec h264 --sink /output/output.mkv"
+    }
+  },
+  "rtp-over-quic-gcc-newreno": {
+    "name": "rtp-over-quic",
+    "sender": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic",
+      "args": "--cc-dump /log/gcc.log --rtcp-dump /log/rtcp_in.log --rtp-dump /log/rtp_out.log --qlog /log --gcc --newreno --codec h264 --source /input/input.y4m"
+    },
+    "receiver": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic",
+      "args": "--rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log --qlog /log --twcc --codec h264 --sink /output/output.mkv"
+    }
+  },
+  "rtp-over-quic-scream-newreno": {
+    "name": "rtp-over-quic",
+    "sender": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic",
+      "args": "--cc-dump /log/scream.log --rtcp-dump /log/rtcp_in.log --rtp-dump /log/rtp_out.log --qlog /log --scream --newreno --codec h264 --source /input/input.y4m"
+    },
+    "receiver": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic",
+      "args": "--rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log --qlog /log --rfc8888 --codec h264 --sink /output/output.mkv"
+    }
+  },
+  "rtp-over-quic-scream-local-feedback": {
+    "name": "rtp-over-quic",
+    "sender": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic",
+      "args": "--cc-dump /log/scream.log --rtcp-dump /log/rtcp_in.log --rtp-dump /log/rtp_out.log --qlog /log --scream --local-rfc8888 --codec h264 --source /input/input.y4m"
+    },
+    "receiver": {
+      "href": "",
+      "image": "engelbart/rtp-over-quic",
+      "args": "--rtcp-dump /log/rtcp_out.log --rtp-dump /log/rtp_in.log --qlog /log --codec h264 --sink /output/output.mkv"
     }
   }
 }
