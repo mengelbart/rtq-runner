@@ -225,13 +225,14 @@ def main():
                 plot.add_router(os.path.join(output_dir, router), basetime, router)
                 plot.plot(path)
 
-            found_gcc_log = False
-            gcc = gcc_plot(source)
-            if gcc.add_metrics(os.path.join(dir, 'send_log', 'gcc.log'), basetime):
-                found_gcc_log = True
+            # Ignore GCC plots, as metrics are currently not available
+            #found_gcc_log = False
+            #gcc = gcc_plot(source)
+            #if gcc.add_metrics(os.path.join(dir, 'send_log', 'gcc.log'), basetime):
+            #    found_gcc_log = True
 
-            if found_gcc_log:
-                gcc.plot(path)
+            #if found_gcc_log:
+            #    gcc.plot(path)
 
     tcp_receive_log = os.path.join(output_dir, 'tcp', 'receive_log', 'tcp.log')
     tcp_send_log = os.path.join(output_dir, 'tcp', 'send_log', 'tcp.log')
