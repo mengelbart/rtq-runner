@@ -117,6 +117,16 @@ func (d *Basic) Run() error {
 		return err
 	}
 
+	// Clean up previous runs
+	cleanUpCMD := exec.Command(
+		"docker-compose", "-f", d.ComposeFile, "down",
+	)
+	cleanUpCMD.Stdout = os.Stdout
+	cleanUpCMD.Stderr = os.Stderr
+	if err := cleanUpCMD.Run(); err != nil {
+		return err
+	}
+
 	upCMD := exec.Command(
 		"docker-compose", "-f", d.ComposeFile,
 		"up", "--force-recreate",

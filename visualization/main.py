@@ -185,14 +185,22 @@ def main():
     output_dir = 'output'
     html_dir = 'html'
 
+    print("RUN main.py")
+
     with open('output/config.json') as config_file:
         config = json.load(config_file)
+
+    print("config:")
+    print(config)
 
     run_id = str(config['date'])
     connections = config['connections']
     testcase = config['scenario']['name']
 
     for connection in connections:
+
+        print("plot conn:")
+        print(connection)
 
         path = os.path.join(html_dir, run_id, connection['implementation'], testcase)
         Path(path).mkdir(parents=True, exist_ok=True)
