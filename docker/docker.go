@@ -119,7 +119,7 @@ func (d *Basic) Run() error {
 
 	// Clean up previous runs
 	cleanUpCMD := exec.Command(
-		"docker-compose", "-f", d.ComposeFile, "down",
+		"docker-compose", "-f", d.ComposeFile, "down", "--remove-orphans",
 	)
 	cleanUpCMD.Stdout = os.Stdout
 	cleanUpCMD.Stderr = os.Stderr
