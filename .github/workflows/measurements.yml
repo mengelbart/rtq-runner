@@ -56,7 +56,7 @@ jobs:
     steps:
       - name: clean up workspace
         run: |
-          sudo rm -rf output/
+          rm -rf output/
       - name: download test video
         run: |
           mkdir -p input/
