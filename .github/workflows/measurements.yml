@@ -60,7 +60,7 @@ jobs:
       - name: download test video
         run: |
           mkdir -p input/
-          wget -P input/ -O input.y4m http://localhost:8000/sintel4m.y4m
+          wget -O input/input.y4m http://localhost:8000/sintel4m.y4m
       - uses: actions/setup-go@v1
         with:
           go-version: '1.17.3'
