@@ -81,7 +81,7 @@ services:
         ipv4_address: 172.26.0.4
     cap_add:
       - NET_ADMIN
-    entrypoint: /iperf.sh -i 0.2 -C cubic -J --logfile /log/tcp.log -t 120
+    entrypoint: /iperf.sh -i 0.2 -C cubic -J --logfile /log/tcp.log -t 115
 
   tcp_receiver:
     image: engelbart/endpoint
