@@ -1,0 +1,84 @@
+version: "3.8"
+
+services:
+  leftrouter:
+    image: engelbart/router
+    tty: true
+    command: bash
+    container_name: leftrouter
+    networks:
+      sharednet:
+        ipv4_address: 172.25.0.2
+      leftnet:
+        ipv4_address: 172.26.0.2
+    cap_add:
+      - NET_ADMIN
+
+  rightrouter:
+    image: engelbart/router
+    tty: true
+    command: bash
+    container_name: rightrouter
+    networks:
+      sharednet:
+        ipv4_address: 172.25.0.3
+      rightnet:
+        ipv4_address: 172.27.0.2
+    cap_add:
+      - NET_ADMIN
+
+  sender:
+    image: $SENDER
+    tty: true
+    container_name: sender
+    hostname: sender
+    environment:
+      ROLE: 'sender'
+      ARGS: $SENDER_ARGS
+      RECEIVER: '172.27.0.3'
+    volumes:
+      - ./$OUTPUT/send_log:/log
+      - ./input:/input:ro
+    networks:
+      leftnet:
+        ipv4_address: 172.26.0.3
+    cap_add:
+      - NET_ADMIN
+
+  receiver:
+    image: $RECEIVER
+    tty: true
+    container_name: receiver
+    hostname: receiver
+    environment:
+      ROLE: 'receiver'
+      ARGS: $RECEIVER_ARGS
+      SENDER: '172.26.03'
+    volumes:
+      - ./$OUTPUT/receive_log:/log
+      - ./$OUTPUT/sink:/output
+    networks:
+      rightnet:
+        ipv4_address: 172.27.0.3
+    cap_add:
+      - NET_ADMIN
+
+networks:
+  sharednet:
+    name: sharednet
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.0.0/16
+  leftnet:
+    name: leftnet
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.26.0.0/16
+  rightnet:
+    name: rightnet
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.27.0.0/16
